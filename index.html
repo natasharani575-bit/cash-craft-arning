@@ -1,0 +1,32 @@
+-- 1. Users Table (With Investment & Daily Profit Tracking)
+CREATE TABLE users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(50) NOT NULL,
+    email VARCHAR(100) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    balance DECIMAL(10,2) DEFAULT 0.00,
+    investment_amount DECIMAL(10,2) DEFAULT 0.00,
+    daily_profit DECIMAL(10,2) DEFAULT 0.00, -- Admin will set this based on investment tier
+    is_approved INT DEFAULT 0, -- 0 = Not approved by admin, 1 = Approved
+    last_task_time TIMESTAMP NULL, -- To track 24-hour gap
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 2. User Activity Logs (To track every single action of the user)
+CREATE TABLE activity_logs (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT,
+    action_description TEXT,
+    ip_address VARCHAR(45),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+-- 3. Live Chat Messages Table
+CREATE TABLE chat_messages (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT,
+    sender ENUM('user', 'admin') NOT NULL,
+    message TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

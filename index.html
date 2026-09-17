@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CashCraft - Complete Platform</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background: #070b14; color: #fff; padding: 10px; }
+        .app-container { max-width: 600px; margin: auto; background: #0f172a; border-radius: 14px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); overflow: hidden; border: 1px solid #1e293b; min-height: 600px; display: flex; flex-direction: column; }
+        
+        /* Navbar */
+        .navbar { background: #1e293b; padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; }
+        .logo { font-size: 18px; font-weight: bold; color: #f59e0b; }
+        .user-info { font-size: 12px; color: #94a3b8; }
+
+        /* Full Screen Navigation Tabs for Mobile & Desktop */
+        .mobile-nav { background: #111827; display: flex; justify-content: space-around; padding: 10px 5px; border-bottom: 1px solid #1f2937; flex-wrap: wrap; gap: 5px; }
+        .mobile-nav button { background: #1e293b; border: 1px solid #334155; color: #9ca3af; padding: 6px 10px; font-size: 11px; border-radius: 4px; cursor: pointer; }
+        .mobile-nav button.active { background: #f59e0b; color: #000; font-weight: bold; border-color: #f59e0b; }
+
+        .content { flex: 1; padding: 20px; overflow-y: auto; }
+        
+        /* Forms & Cards */
+        .card { background: #1e293b; padding: 15px; border-radius: 10px; margin-bottom: 15px; border: 1px solid #334155; }
+        input, select { width: 100%; padding: 10px; margin: 6px 0 12px 0; background: #0f172a; border: 1px solid #475569; border-radius: 6px; color: #fff; font-size: 14px; }
+        .btn { background: #2563eb; color: white; border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; font-size: 14px; }
+        .btn:hover { background: #1d4ed8; }
+        .btn-success { background: #059669; }
+        .btn-success:hover { background: #047857; }
+        
+        /* Golden Cash Wheel Styling */
+        .wheel-box { text-align: center; background: radial-gradient(circle, #1e293b 0%, #0f172a 100%); padding: 15px; border-radius: 15px; border: 3px solid #d97706; box-shadow: 0 0 20px rgba(217,119,6,0.4); display: inline-block; margin: auto; }
+        .wheel-title { background: linear-gradient(to bottom, #fbbf24, #d97706); color: #000; font-weight: bold; padding: 4px 15px; border-radius: 20px; font-size: 16px; display: inline-block; margin-bottom: 8px; text-transform: uppercase; border: 2px solid #fef3c7; }
+        .wheel-wrap { position: relative; display: inline-block; }
+        canvas { background: #0f172a; border-radius: 50%; border: 5px solid #b45309; }
+        .pointer { position: absolute; top: -5px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 10px solid transparent; border-right: 10px solid transparent; border-bottom: 20px solid #fbbf24; z-index: 10; }
+        
+        /* Chat Box */
+        .chat-container { display: flex; flex-direction: column; height: 300px; }
+        .chat-messages { flex: 1; background: #0b0f19; border: 1px solid #334155; border-radius: 6px; padding: 8px; overflow-y: auto; margin-bottom: 8px; }
+        .msg { padding: 6px 10px; margin: 4px 0; border-radius: 6px; max-width: 80%; font-size: 12px; }
+        .msg-user { background: #1e3a8a; margin-left: auto; }
+        .msg-admin { background: #374151; margin-right: auto; }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #334155; padding: 6px; text-align: center; font-size: 12px; }
+        th { background: #1e293b; color: #94a3b8; }
+        .error-box { background: #7f1d1d; color: #fca5a5; padding: 10px; border-radius: 6px; text-align: center; margin-bottom: 12px; font-size: 13px; }
+        .link-text { color: #f59e0b; cursor: pointer; text-align: center; margin-top: 10px; font-size: 13px; }
+    </style>
+</head>
+<body>
+
+<div class="app-container" id="app"></div>
+
+<script>
+    if (!localStorage.getItem('users')) {
+        localStorage.setItem('users', JSON.stringify([
+            { name: 'Admin Master', email: 'admin@gmail.com', pass: 'admin1234', balance: 0, investment: 0, profit: 0, approved: 1, ref: 'ADMIN', count: 0, level: 1 }
+        ]));
+    }
+    if (!localStorage.getItem('chats')) localStorage.setItem('chats', JSON.stringify([]));
+    if (!localStorage.getItem('admin_rig')) localStorage.setItem('admin_rig', '');
+
+    let loggedUser = sessionStorage.getItem('logged_user');
+    let currentTab = 'dashboard';
+    let authMode = 'register'; // Pehle register page aega, phir login
+
+    function render() {
+        let app = document.getElementById('app');
+        if (!loggedUser) {
+            if (authMode === 'register') {
+                app.innerHTML = `
+                    <div style="padding: 25px;">
+                        <h2 style="text-align:center; color:#f59e0b; margin-bottom:15px;">Create Your Account (Register)</h2>
+                        <div class="card">
+                            <input type="text" id="reg_name" placeholder="Full Name">
+                            <input type="email" id="reg_email" placeholder="Gmail Address">
+                            <input type="password" id="reg_pass" placeholder="Password">
+                            <input type="text" id="reg_ref" placeholder="Referral Code (Optional)">
+                            <button class="btn btn-success" onclick="register()">Register Now</button>
+                        </div>
+                        <p class="link-text" onclick="setAuthMode('login')">Already have an account? <b>Login here</b></p>
+                    </div>`;
+            } else {
+                app.innerHTML = `
+                    <div style="padding: 25px;">
+                        <h2 style="text-align:center; color:#f59e0b; margin-bottom:15px;">Welcome Back (Login)</h2>
+                        <div class="card">
+                            <input type="email" id="log_email" placeholder="Gmail Address">
+                            <input type="password" id="log_pass" placeholder="Password">
+                            <button class="btn" onclick="login()">Login</button>
+                        </div>
+                        <p class="link-text" onclick="setAuthMode('register')">Don't have an account? <b>Register First</b></p>
+                    </div>`;
+            }
+        } else if (loggedUser === 'admin@gmail.com') {
+            // ADMIN PANEL
+            let users = JSON.parse(localStorage.getItem('users'));
+            let forced = localStorage.getItem('admin_rig');
+            let usersHtml = '';
+            users.forEach((u, i) => {
+                if(u.email !== 'admin@gmail.com') {
+                    usersHtml += `<tr>
+                        <td>${u.name}<br><small>${u.email}</small></td>
+                        <td>$${u.investment}</td>
+                        <td>${u.approved == 1 ? '<span style="color:#34d399">Active</span>' : '<span style="color:#f87171">Pending Proof</span>'}</td>
+                        <td>${u.approved == 0 ? `<button onclick="approveUser(${i})" class="btn-success" style="padding:3px 6px; font-size:10px;">Approve</button>` : 'Approved'}</td>
+                    </tr>`;
+                }
+            });
+
+            app.innerHTML = `
+                <div class="navbar">
+                    <div class="logo">👑 Admin Master Panel</div>
+                    <button onclick="logout()" style="background:#dc2626; border:none; color:#fff; padding:5px 10px; border-radius:4px; font-size:12px; cursor:pointer;">Logout</button>
+                </div>
+                <div class="content">
+                    <div class="card">
+                        <h3>Rig Cash Wheel Result</h3>
+                        <select id="force_val">
+                            <option value="">-- Random (Normal) --</option>
+                            <option value="6">$6</option><option value="10">$10</option><option value="15">$15</option>
+                            <option value="20">$20</option><option value="25">$25</option><option value="35">$35</option>
+                            <option value="50">$50</option><option value="85">$85</option><option value="100">$100</option>
+                        </select>
+                        <button class="btn" onclick="setRig()">Lock Next Prize</button>
+                        <p style="font-size:11px; color:#94a3b8; margin-top:4px;">Forced Prize: <b>${forced ? '$'+forced : 'None'}</b></p>
+                    </div>
+                    <div class="card">
+                        <h3>User Approvals & Investments</h3>
+                        <table>
+                            <tr><th>User</th><th>Inv</th><th>Status</th><th>Action</th></tr>
+                            ${usersHtml}
+                        </table>
+                    </div>
+                    <div class="card">
+                        <h3>Live Support Chats</h3>
+                        <div class="chat-container">
+                            <div class="chat-messages" id="admin-chat-box"></div>
+                            <input type="text" id="admin_msg" placeholder="Type reply as Admin...">
+                            <button class="btn" onclick="sendAdminChat()">Send</button>
+                        </div>
+                    </div>
+                </div>`;
+            setTimeout(loadAdminChats, 100);
+        } else {
+            // USER FULL SCREEN PAGES
+            let users = JSON.parse(localStorage.getItem('users'));
+            let u = users.find(x => x.email === loggedUser);
+
+            app.innerHTML = `
+                <div class="navbar">
+                    <div class="logo">CashCraft</div>
+                    <div class="user-info"><b>${u.name}</b> | Bal: <span style="color:#34d399">$<span id="u-bal">${u.balance}</span></span></div>
+                </div>
+                <div class="mobile-nav">
+                    <button class="${currentTab=='dashboard'?'active':''}" onclick="switchTab('dashboard')">Dashboard</button>
+                    <button class="${currentTab=='investment'?'active':''}" onclick="switchTab('investment')">Investment</button>
+                    <button class="${currentTab=='wheel'?'active':''}" onclick="switchTab('wheel')">Cash Wheel</button>
+                    <button class="${currentTab=='referral'?'active':''}" onclick="switchTab('referral')">Team</button>
+                    <button class="${currentTab=='support'?'active':''}" onclick="switchTab('support')">Support</button>
+                    <button onclick="logout()" style="color:#f87171; background:#1e293b;">Logout</button>
+                </div>
+                <div class="content" id="tab-content"></div>`;
+            renderTabContent();
+        }
+    }
+
+    function setAuthMode(mode) {
+        authMode = mode;
+        render();
+    }
+
+    function switchTab(tab) {
+        currentTab = tab;
+        render();
+    }
+
+    function renderTabContent() {
+        let users = JSON.parse(localStorage.getItem('users'));
+        let u = users.find(x => x.email === loggedUser);
+        let container = document.getElementById('tab-content');
+
+        if (currentTab === 'dashboard') {
+            container.innerHTML = `
+                <div class="card">
+                    <h3>Dashboard Overview</h3>
+                    <p style="margin-top:8px; font-size:13px;"><b>Account Status:</b> ${u.approved == 1 ? '<span style="color:#34d399">Active & Approved</span>' : '<span style="color:#f87171">Locked (Pending Investment Proof)</span>'}</p>
+                    <p style="font-size:13px; margin-top:5px;"><b>Investment Plan:</b> $${u.investment || 0}</p>
+                    <p style="font-size:13px; margin-top:5px;"><b>Daily Profit:</b> $${u.profit || 0}</p>
+                    <p style="font-size:13px; margin-top:5px;"><b>Referral Link Code:</b> <span style="color:#f59e0b;">ref=${u.ref}</span></p>
+                </div>
+                ${u.approved == 0 ? `<div class="error-box">⚠️ Your account is locked! Please go to <b>Investment</b> tab, send USDT to TRC20 address, and upload your payment screenshot.</div>` : ''}
+            `;
+        } else if (currentTab === 'investment') {
+            container.innerHTML = `
+                <div class="card">
+                    <h3>Investment Plans & TRC20 Deposit</h3>
+                    <p style="font-size:12px; color:#94a3b8; margin-bottom:10px;">Send USDT to Official TRC20 Address:<br><b style="color:#f59e0b; word-break:break-all;">TXy7u39vKsz...AdminWalletAddress...91b</b></p>
+                    <select id="inv_amt">
+                        <option value="10">$10 Plan</option><option value="20">$20 Plan</option><option value="23">$23 Plan</option>
+                        <option value="40">$40 Plan</option><option value="50">$50 Plan</option><option value="60">$60 Plan</option>
+                        <option value="70">$70 Plan</option><option value="80">$80 Plan</option><option value="100">$100 Plan</option>
+                    </select>
+                    <label style="font-size:11px; color:#94a3b8;">Upload Payment Proof Screenshot:</label>
+                    <input type="file" id="inv_file">
+                    <button class="btn btn-success" onclick="submitInvestment()">Submit Payment Proof</button>
+                </div>
+            `;
+        } else if (currentTab === 'wheel') {
+            container.innerHTML = `
+                <div style="text-align: center;">
+                    ${u.approved == 0 ? `<div class="error-box">🔒 Cash Wheel is locked until Admin approves your investment!</div><div style="opacity:0.3; pointer-events:none;">` : `<div>`}
+                    <div class="wheel-box">
+                        <div class="wheel-title">Cash Wheel</div><br>
+                        <div class="wheel-wrap">
+                            <div class="pointer"></div>
+                            <canvas id="wheel" width="240" height="240"></canvas>
+                        </div>
+                        <br>
+                        <button class="btn btn-success" id="spinBtn" onclick="spinWheel()" style="margin-top:10px;">SPIN NOW</button>
+                        <h4 id="spinResult" style="color:#fbbf24; margin-top:8px; min-height:20px;"></h4>
+                    </div>
+                    </div>
+                </div>
+            `;
+            setTimeout(initWheel, 100);
+        } else if (currentTab === 'referral') {
+            container.innerHTML = `
+                <div class="card">
+                    <h3>My Referral Team</h3>
+                    <p style="margin-top:8px; font-size:13px;">Total Team Members: <b>${u.count}</b></p>
+                    <p style="font-size:13px; margin-top:5px;">Referral Level: <b>Level ${u.level}</b></p>
+                </div>
+            `;
+        } else if (currentTab === 'support') {
+            container.innerHTML = `
+                <div class="card">
+                    <h3>Live Support Chat with Admin</h3>
+                    <div class="chat-container">
+                        <div class="chat-messages" id="user-chat-box"></div>
+                        <input type="text" id="user_msg" placeholder="Type your message...">
+                        <button class="btn" onclick="sendUserChat()">Send</button>
+                    </div>
+                </div>
+            `;
+            setTimeout(loadUserChats, 100);
+        }
+    }
+
+    function register() {
+        let name = document.getElementById('reg_name').value;
+        let email = document.getElementById('reg_email').value;
+        let pass = document.getElementById('reg_pass').value;
+        let refIn = document.getElementById('reg_ref').value;
+
+        if(!name || !email || !pass) { alert('Please fill all fields!'); return; }
+        let users = JSON.parse(localStorage.getItem('users'));
+        if(users.some(x => x.email === email)) { alert('Email already registered!'); return; }
+
+        let refCode = 'REF' + Math.floor(1000 + Math.random() * 9000);
+        let newUser = { name, email, pass, balance: 0, investment: 0, profit: 0, approved: 0, ref: refCode, count: 0, level: 1 };
+        if(refIn) {
+            let refUser = users.find(x => x.ref === refIn);
+            if(refUser) refUser.count += 1;
+        }
+        users.push(newUser);
+        localStorage.setItem('users', JSON.stringify(users));
+        alert('Registered successfully! Now please login.');
+        authMode = 'login';
+        render();
+    }
+
+    function login() {
+        let email = document.getElementById('log_email').value;
+        let pass = document.getElementById('log_pass').value;
+        let users = JSON.parse(localStorage.getItem('users'));
+        let u = users.find(x => x.email === email && x.pass === pass);
+        if(u) {
+            loggedUser = u.email;
+            sessionStorage.setItem('logged_user', loggedUser);
+            render();
+        } else {
+            alert('Invalid Email or Password!');
+        }
+    }
+
+    function logout() {
+        loggedUser = null;
+        sessionStorage.removeItem('logged_user');
+        render();
+    }
+
+    function submitInvestment() {
+        let amt = parseFloat(document.getElementById('inv_amt').value);
+        let users = JSON.parse(localStorage.getItem('users'));
+        let u = users.find(x => x.email === loggedUser);
+        u.investment = amt;
+        u.profit = amt * 0.05;
+        u.approved = 0;
+        localStorage.setItem('users', JSON.stringify(users));
+        alert('Proof submitted successfully! Waiting for Admin approval.');
+        switchTab('dashboard');
+    }
+
+    function approveUser(index) {
+        let users = JSON.parse(localStorage.getItem('users'));
+        users[index].approved = 1;
+        localStorage.setItem('users', JSON.stringify(users));
+        render();
+    }
+
+    function setRig() {
+        let val = document.getElementById('force_val').value;
+        localStorage.setItem('admin_rig', val);
+        alert('Next spin prize locked successfully!');
+    }
+
+    function sendUserChat() {
+        let text = document.getElementById('user_msg').value;
+        if(!text) return;
+        let chats = JSON.parse(localStorage.getItem('chats'));
+        chats.push({ sender: loggedUser, text });
+        localStorage.setItem('chats', JSON.stringify(chats));
+        document.getElementById('user_msg').value = '';
+        loadUserChats();
+    }
+
+    function loadUserChats() {
+        let box = document.getElementById('user-chat-box');
+        if(!box) return;
+        let chats = JSON.parse(localStorage.getItem('chats'));
+        box.innerHTML = chats.map(c => c.sender === loggedUser || c.sender === 'Admin' ? `<div class="msg ${c.sender === 'Admin'?'msg-admin':'msg-user'}"><b>${c.sender}:</b> ${c.text}</div>` : '').join('');
+        box.scrollTop = box.scrollHeight;
+    }
+
+    function sendAdminChat() {
+        let text = document.getElementById('admin_msg').value;
+        if(!text) return;
+        let chats = JSON.parse(localStorage.getItem('chats'));
+        chats.push({ sender: 'Admin', text });
+        localStorage.setItem('chats', JSON.stringify(chats));
+        document.getElementById('admin_msg').value = '';
+        loadAdminChats();
+    }
+
+    function loadAdminChats() {
+        let box = document.getElementById('admin-chat-box');
+        if(!box) return;
+        let chats = JSON.parse(localStorage.getItem('chats'));
+        box.innerHTML = chats.map(c => `<div class="msg ${c.sender === 'Admin'?'msg-user':'msg-admin'}"><b>${c.sender}:</b> ${c.text}</div>`).join('');
+        box.scrollTop = box.scrollHeight;
+    }
+
+    // Cash Wheel Values ($6, $10, $15, $20, $25, $35, $50, $85, $100)
+    const prizes = ['$6', '$10', '$15', '$20', '$25', '$35', '$50', '$85', '$100'];
+    const colors = ['#dc2626', '#ea580c', '#ca8a04', '#16a34a', '#0d9488', '#0284c7', '#2563eb', '#7c3aed', '#db2777'];
+    let startAngle = 0;
+    let isSpinning = false;
+
+    function initWheel() {
+        let canvas = document.getElementById('wheel');
+        if(!canvas) return;
+        let ctx = canvas.getContext('2d');
+        let numSegments = prizes.length;
+        let arcSize = (2 * Math.PI) / numSegments;
+
+        function draw() {
+            ctx.clearRect(0, 0, 240, 240);
+            for (let i = 0; i < numSegments; i++) {
+                let angle = startAngle + i * arcSize;
+                ctx.beginPath();
+                ctx.fillStyle = colors[i];
+                ctx.moveTo(120, 120);
+                ctx.arc(120, 120, 110, angle, angle + arcSize, false);
+                ctx.lineTo(120, 120);
+                ctx.fill();
+                ctx.lineWidth = 1;
+                ctx.strokeStyle = '#0f172a';
+                ctx.stroke();
+
+                ctx.save();
+                ctx.fillStyle = "#ffffff";
+                ctx.font = "bold 12px Arial";
+                ctx.translate(120 + Math.cos(angle + arcSize / 2) * 70, 120 + Math.sin(angle + arcSize / 2) * 70);
+                ctx.rotate(angle + arcSize / 2 + Math.PI / 2);
+                ctx.fillText(prizes[i], -ctx.measureText(prizes[i]).width / 2, 0);
+                ctx.restore();
+            }
+        }
+        draw();
+    }
+
+    function spinWheel() {
+        if (isSpinning) return;
+        isSpinning = true;
+        document.getElementById('spinBtn').disabled = true;
+        document.getElementById('spinResult').innerText = "Spinning...";
+
+        let forced = localStorage.getItem('admin_rig');
+        let winningAmt = 6;
+        let rawPrizes = [6, 10, 15, 20, 25, 35, 50, 85, 100];
+        if(forced && rawPrizes.includes(parseInt(forced))) {
+            winningAmt = parseInt(forced);
+            localStorage.setItem('admin_rig', '');
+        } else {
+            winningAmt = rawPrizes[Math.floor(Math.random() * rawPrizes.length)];
+        }
+
+        let winningIndex = rawPrizes.indexOf(winningAmt);
+        let numSegments = prizes.length;
+        let arcSize = (2 * Math.PI) / numSegments;
+        let targetAngle = 2 * Math.PI - (winningIndex * arcSize + arcSize / 2);
+        let finalAngle = (8 * 2 * Math.PI) + targetAngle;
+
+        let currentRotation = 0;
+        let canvas = document.getElementById('wheel');
+        let ctx = canvas.getContext('2d');
+
+        let interval = setInterval(() => {
+            currentRotation += 0.35;
+            startAngle += 0.35;
+            
+            ctx.clearRect(0, 0, 240, 240);
+            for (let i = 0; i < numSegments; i++) {
+                let angle = startAngle + i * arcSize;
+                ctx.beginPath();
+                ctx.fillStyle = colors[i];
+                ctx.moveTo(120, 120);
+                ctx.arc(120, 120, 110, angle, angle + arcSize, false);
+                ctx.lineTo(120, 120);
+                ctx.fill();
+                ctx.lineWidth = 1;
+                ctx.strokeStyle = '#0f172a';
+                ctx.stroke();
+
+                ctx.save();
+                ctx.fillStyle = "#ffffff";
+                ctx.font = "bold 12px Arial";
+                ctx.translate(120 + Math.cos(angle + arcSize / 2) * 70, 120 + Math.sin(angle + arcSize / 2) * 70);
+                ctx.rotate(angle + arcSize / 2 + Math.PI / 2);
+                ctx.fillText(prizes[i], -ctx.measureText(prizes[i]).width / 2, 0);
+                ctx.restore();
+            }
+
+            if (currentRotation >= finalAngle) {
+                clearInterval(interval);
+                isSpinning = false;
+                document.getElementById('spinBtn').disabled = false;
+                document.getElementById('spinResult').innerText = "🎉 You Won: $" + winningAmt;
+
+                let users = JSON.parse(localStorage.getItem('users'));
+                let u = users.find(x => x.email === loggedUser);
+                u.balance += winningAmt;
+                localStorage.setItem('users', JSON.stringify(users));
+                document.getElementById('u-bal').innerText = u.balance;
+            }
+        }, 20);
+    }
+
+    render();
+</script>
+
+</body>
+</html>

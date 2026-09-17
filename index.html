@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cash Craft - Earning Platform & Admin Panel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brandDark: '#0B132B',
+                        brandCard: '#1C2541',
+                        brandBlue: '#3A86EF',
+                        brandAccent: '#4CC9F0',
+                        brandGold: '#FFD166'
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-brandDark text-white font-sans antialiased min-h-screen flex flex-col">
+
+    <!-- Top Navigation Bar -->
+    <header class="bg-brandCard border-b border-gray-800 px-6 py-4 flex justify-between items-center sticky top-0 z-50">
+        <div class="flex items-center space-x-3">
+            <div class="bg-brandBlue p-2 rounded-lg text-white font-bold text-xl flex items-center justify-center shadow-lg">
+                <i class="fa-solid fa-coins"></i>
+            </div>
+            <span class="text-xl font-extrabold tracking-wide text-white">Cash<span class="text-brandBlue">Craft</span></span>
+        </div>
+        <div class="flex items-center space-x-3 overflow-x-auto">
+            <button onclick="switchTab('dashboard')" class="text-gray-300 hover:text-white text-sm font-medium transition px-2 py-1">Dashboard</button>
+            <button onclick="switchTab('investment')" class="text-gray-300 hover:text-white text-sm font-medium transition px-2 py-1">Investment & Plans</button>
+            <button onclick="switchTab('withdraw')" class="text-gray-300 hover:text-white text-sm font-medium transition px-2 py-1">Withdraw</button>
+            <button onclick="switchTab('spin')" class="text-gray-300 hover:text-white text-sm font-medium transition px-2 py-1">Spin Wheel</button>
+            <button onclick="switchTab('admin')" class="bg-brandGold text-brandDark font-bold text-xs px-3 py-1.5 rounded-lg shadow hover:opacity-90 transition">🛡️ Admin Panel</button>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 relative">
+
+        <!-- 1. DASHBOARD VIEW -->
+        <section id="dashboard-view" class="space-y-6">
+            <div class="bg-gradient-to-r from-brandCard to-blue-950 p-6 rounded-2xl border border-blue-900/40 shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <h1 class="text-2xl font-bold">Welcome Back, John 👋</h1>
+                    <p class="text-gray-400 text-sm mt-1">Account Status: <span id="account-status-badge" class="px-2 py-0.5 rounded text-xs font-bold bg-red-500/20 text-red-400">Pending / Inactive</span></p>
+                </div>
+                <!-- Daily Earning / Bonus Claim Box -->
+                <div class="bg-brandDark p-4 rounded-xl border border-gray-800 flex items-center justify-between gap-4">
+                    <div>
+                        <p class="text-xs text-gray-400">Your Daily Profit / Earning</p>
+                        <p class="text-lg font-bold text-brandGold" id="daily-earning-text">$0.00</p>
+                        <p class="text-[10px] text-gray-500" id="timer-display">Status: Investment Required</p>
+                    </div>
+                    <button onclick="claimDailyProfit()" id="claim-btn" class="bg-brandGold text-brandDark font-bold text-xs px-4 py-2.5 rounded-lg hover:opacity-90 transition shadow">Claim Daily</button>
+                </div>
+            </div>
+
+            <!-- Stats Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="bg-brandCard p-5 rounded-2xl border border-gray-800 shadow">
+                    <p class="text-gray-400 text-xs font-semibold uppercase">Total Balance</p>
+                    <h3 id="user-balance-display" class="text-2xl font-extrabold text-brandGold mt-2">$0.00</h3>
+                </div>
+                <div class="bg-brandCard p-5 rounded-2xl border border-gray-800 shadow">
+                    <p class="text-gray-400 text-xs font-semibold uppercase">Active Investment</p>
+                    <h3 id="user-investment-display" class="text-2xl font-extrabold text-white mt-2">$0.00</h3>
+                </div>
+                <div class="bg-brandCard p-5 rounded-2xl border border-gray-800 shadow">
+                    <p class="text-gray-400 text-xs font-semibold uppercase">Total Deposit</p>
+                    <h3 class="text-2xl font-extrabold text-white mt-2">$0.00</h3>
+                </div>
+                <div class="bg-brandCard p-5 rounded-2xl border border-gray-800 shadow">
+                    <p class="text-gray-400 text-xs font-semibold uppercase">Total Withdrawal</p>
+                    <h3 class="text-2xl font-extrabold text-white mt-2">$0.00</h3>
+                </div>
+            </div>
+        </section>
+
+        <!-- 2. INVESTMENT & TOPUP VIEW (With Screenshot Upload) -->
+        <section id="investment-view" class="space-y-6 hidden max-w-2xl mx-auto bg-brandCard p-6 rounded-2xl border border-gray-800 shadow-xl">
+            <div>
+                <h2 class="text-xl font-bold">Investment Plans & Account Activation</h2>
+                <p class="text-gray-400 text-sm mt-1">Invest $10, $30, $50 or $100 and upload screenshot to unlock daily earnings.</p>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-gray-400 uppercase mb-2">Select Investment Tier</label>
+                    <select id="investment-tier-select" class="w-full bg-brandDark border border-gray-700 rounded-xl px-4 py-3 text-sm text-white outline-none">
+                        <option value="10" data-daily="0.30">Tier 1: Invest $10 (Get $0.30 Daily)</option>
+                        <option value="30" data-daily="0.80">Tier 2: Invest $30 (Get $0.80 Daily)</option>
+                        <option value="50" data-daily="1.00">Tier 3: Invest $50 (Get $1.00 Daily)</option>
+                        <option value="100" data-daily="1.50">Tier 4: Invest $100 (Get $1.50 Daily)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-400 uppercase mb-2">Upload Payment Screenshot (پیمنٹ کی تصویر)</label>
+                    <div class="border-2 border-dashed border-gray-700 rounded-xl p-6 text-center bg-brandDark">
+                        <i class="fa-solid fa-cloud-arrow-up text-3xl text-brandBlue mb-2"></i>
+                        <p class="text-sm text-gray-300">Click or drag & drop payment proof image</p>
+                        <input type="file" accept="image/*" class="mt-2 text-xs text-gray-400">
+                    </div>
+                </div>
+                <button onclick="submitInvestmentProof()" class="w-full bg-brandBlue text-white py-3 rounded-xl font-bold text-sm hover:bg-blue-600 transition shadow-lg">Submit Proof for Admin Approval</button>
+            </div>
+        </section>
+
+        <!-- 3. WITHDRAW VIEW -->
+        <section id="withdraw-view" class="space-y-6 hidden max-w-xl mx-auto bg-brandCard p-6 rounded-2xl border border-gray-800 shadow-xl">
+            <div>
+                <h2 class="text-xl font-bold">Withdraw Funds</h2>
+                <p class="text-gray-400 text-sm mt-1">Request your earnings to your wallet.</p>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-gray-400 uppercase mb-2">Wallet Address / Account</label>
+                    <input type="text" placeholder="Enter USDT address or JazzCash number" class="w-full bg-brandDark border border-gray-700 rounded-xl px-4 py-3 text-sm text-white outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-400 uppercase mb-2">Amount (USD)</label>
+                    <input type="number" placeholder="Enter amount" class="w-full bg-brandDark border border-gray-700 rounded-xl px-4 py-3 text-sm text-white outline-none">
+                </div>
+                <button onclick="alert('Withdrawal request submitted!')" class="w-full bg-brandBlue text-white py-3 rounded-xl font-bold text-sm hover:bg-blue-600 transition shadow-lg">Request Withdrawal</button>
+            </div>
+        </section>
+
+        <!-- 4. SPIN WHEEL VIEW -->
+        <section id="spin-view" class="space-y-6 hidden max-w-lg mx-auto text-center bg-brandCard p-6 rounded-2xl border border-gray-800 shadow-xl">
+            <div>
+                <h2 class="text-xl font-bold">G-Cash Wheel</h2>
+                <p class="text-gray-400 text-sm mt-1">Spin the wheel and win your reward!</p>
+            </div>
+            <div class="relative w-56 h-56 mx-auto rounded-full border-8 border-brandBlue flex items-center justify-center bg-gradient-to-tr from-blue-900 to-brandBlue shadow-2xl">
+                <i class="fa-solid fa-dharmachakra text-5xl text-brandGold animate-spin"></i>
+            </div>
+            <div id="spin-result-box" class="text-lg font-bold text-brandGold"></div>
+            <button onclick="executeAdminControlledSpin()" class="w-full bg-brandGold text-brandDark py-3 rounded-xl font-bold text-sm hover:opacity-90 transition shadow-lg">Spin Now</button>
+        </section>
+
+        <!-- 5. ADMIN PANEL VIEW (Approval & Controls) -->
+        <section id="admin-view" class="space-y-6 hidden bg-brandCard p-6 rounded-2xl border border-yellow-500/30 shadow-2xl">
+            <div class="border-b border-gray-800 pb-4 flex justify-between items-center">
+                <div>
+                    <h2 class="text-xl font-bold text-brandGold">🛡️ Cash Craft - Master Admin Panel</h2>
+                    <p class="text-gray-400 text-sm">Approve user accounts, control balances, and manage tier earnings.</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Admin Control 1: Account Approval & Investment Assignment -->
+                <div class="bg-brandDark p-5 rounded-xl border border-gray-800 space-y-4">
+                    <h3 class="font-bold text-md text-white">👤 User Account Approval & Investment</h3>
+                    <p class="text-xs text-gray-400">Review pending screenshot proof and approve account:</p>
+                    <div class="flex gap-2">
+                        <button onclick="adminApproveUser(10, 0.30)" class="w-full bg-blue-600 text-white py-2 rounded-lg text-xs font-bold">Approve ($10 / $0.30 Daily)</button>
+                        <button onclick="adminApproveUser(50, 1.00)" class="w-full bg-green-600 text-white py-2 rounded-lg text-xs font-bold">Approve ($50 / $1.00 Daily)</button>
+                    </div>
+                    <button onclick="adminApproveUser(100, 1.50)" class="w-full bg-brandGold text-brandDark py-2 rounded-lg text-xs font-bold">Approve ($100 / $1.50 Daily)</button>
+                </div>
+
+                <!-- Admin Control 2: Direct Balance Override -->
+                <div class="bg-brandDark p-5 rounded-xl border border-gray-800 space-y-4">
+                    <h3 class="font-bold text-md text-white">💰 Direct Balance Control</h3>
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1">Set Exact Balance ($)</label>
+                        <input type="number" id="admin-input-balance" value="0.00" class="w-full bg-brandCard border border-gray-700 rounded-lg px-3 py-2 text-sm text-white outline-none">
+                    </div>
+                    <button onclick="updateUserBalanceDirect()" class="w-full bg-brandBlue text-white py-2 rounded-lg font-bold text-sm hover:bg-blue-600 transition">Update Balance</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Live Chat Floating Widget -->
+        <div class="fixed bottom-6 right-6 z-50">
+            <button onclick="toggleChatBox()" class="bg-brandBlue text-white w-14 h-14 rounded-full shadow-2xl flex items-center justify-center text-2xl hover:scale-105 transition">
+                <i class="fa-solid fa-comments"></i>
+            </button>
+        </div>
+
+        <!-- Chat Modal -->
+        <div id="chat-modal" class="hidden fixed bottom-24 right-6 w-80 bg-brandCard border border-gray-700 rounded-2xl shadow-2xl z-50 overflow-hidden flex flex-col">
+            <div class="bg-brandDark px-4 py-3 border-b border-gray-700 flex justify-between items-center">
+                <span class="font-bold text-sm flex items-center gap-2"><i class="fa-solid fa-circle text-green-500 text-xs"></i> Live Support Chat</span>
+                <button onclick="toggleChatBox()" class="text-gray-400 hover:text-white">&times;</button>
+            </div>
+            <div class="p-4 h-64 overflow-y-auto space-y-3 text-xs text-gray-300">
+                <div class="bg-brandDark p-2.5 rounded-lg max-w-[80%]">Welcome to Cash Craft! Send your top-up screenshot to get approved.</div>
+            </div>
+            <div class="p-3 bg-brandDark border-t border-gray-700 flex gap-2">
+                <input type="text" placeholder="Type message..." class="w-full bg-brandCard border border-gray-700 rounded-lg px-3 py-2 text-xs text-white outline-none">
+                <button class="bg-brandBlue text-white px-3 py-2 rounded-lg text-xs font-bold">Send</button>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Core JavaScript Logic -->
+    <script>
+        let userBalance = 0.00;
+        let userInvestment = 0.00;
+        let dailyEarningRate = 0.00;
+        let isAccountActive = false;
+        let lastClaimTime = 0; // Timestamp for 24 hours cooldown
+
+        function switchTab(tabName) {
+            document.getElementById('dashboard-view').classList.add('hidden');
+            document.getElementById('investment-view').classList.add('hidden');
+            document.getElementById('withdraw-view').classList.add('hidden');
+            document.getElementById('spin-view').classList.add('hidden');
+            document.getElementById('admin-view').classList.add('hidden');
+
+            document.getElementById(tabName + '-view').classList.remove('hidden');
+        }
+
+        function submitInvestmentProof() {
+            let select = document.getElementById('investment-tier-select');
+            let amount = select.value;
+            alert('Investment proof submitted for $' + amount + '! Please wait for Admin approval to activate your account.');
+        }
+
+        // Admin approves the user account & assigns daily rate based on investment
+        function adminApproveUser(invAmount, dailyRate) {
+            isAccountActive = true;
+            userInvestment = invAmount;
+            dailyEarningRate = dailyRate;
+
+            document.getElementById('account-status-badge').innerText = 'Active & Verified ✔';
+            document.getElementById('account-status-badge').className = 'px-2 py-0.5 rounded text-xs font-bold bg-green-500/20 text-green-400';
+            document.getElementById('daily-earning-text').innerText = '$' + dailyEarningRate.toFixed(2);
+            document.getElementById('user-investment-display').innerText = '$' + userInvestment.toFixed(2);
+            document.getElementById('timer-display').innerText = 'Status: Ready to claim daily profit';
+            
+            alert('Success! User account approved. Investment: $' + invAmount + ', Daily Profit: $' + dailyRate);
+        }
+
+        // Claim Daily Profit with 24 Hours Cooldown & Account Verification Check
+        function claimDailyProfit() {
+            if (!isAccountActive) {
+                alert('⚠️ Error: Your account is not active! Please submit your payment/investment proof and get approved by Admin first.');
+                return;
+            }
+
+            let currentTime = Date.now();
+            let cooldownTime = 24 * 60 * 60 * 1000; // 24 Hours in milliseconds
+
+            // For testing convenience right now, you can claim; in production, 24h check applies:
+            if (lastClaimTime !== 0 && (currentTime - lastClaimTime < cooldownTime)) {
+                let hoursLeft = Math.ceil((cooldownTime - (currentTime - lastClaimTime)) / (1000 * 60 * 60));
+                alert('⏳ Cooldown active! You can claim your daily profit again in ' + hoursLeft + ' hours.');
+                return;
+            }
+
+            userBalance += dailyEarningRate;
+            lastClaimTime = currentTime;
+
+            document.getElementById('user-balance-display').innerText = '$' + userBalance.toFixed(2);
+            document.getElementById('timer-display').innerText = 'Next claim available in 24 hours';
+            alert('🎉 Success! Daily profit of $' + dailyEarningRate.toFixed(2) + ' added to your balance.');
+        }
+
+        function updateUserBalanceDirect() {
+            let newBal = document.getElementById('admin-input-balance').value;
+            userBalance = parseFloat(newBal);
+            document.getElementById('user-balance-display').innerText = '$' + userBalance.toFixed(2);
+            alert('Admin directly updated balance to $' + newBal);
+        }
+
+        function executeAdminControlledSpin() {
+            if (!isAccountActive) {
+                alert('⚠️ Error: Please activate your account with investment first!');
+                return;
+            }
+            userBalance += 5.00; // Reward example
+            document.getElementById('user-balance-display').innerText = '$' + userBalance.toFixed(2);
+            document.getElementById('spin-result-box').innerText = '🎉 You won $5.00 from Spin Wheel!';
+        }
+
+        function toggleChatBox() {
+            let chat = document.getElementById('chat-modal');
+            chat.classList.toggle('hidden');
+        }
+    </script>
+</body>
+</html>

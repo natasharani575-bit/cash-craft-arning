@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CashCraft - Complete Referral Link & Team System</title>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-color: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: #334155;
+            --accent: #22c55e;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background-color: var(--card-bg);
+            border-bottom: 1px solid var(--border-color);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+            width: 100%;
+            flex: 1;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            padding: 2rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            margin-bottom: 1.5rem;
+        }
+
+        h2, h3 {
+            margin-bottom: 1rem;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--text-muted);
+        }
+
+        input, select {
+            width: 100%;
+            padding: 0.75rem;
+            border-radius: 0.375rem;
+            border: 1px solid var(--border-color);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-size: 1rem;
+        }
+
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: background-color 0.2s;
+            width: 100%;
+        }
+
+        button:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .toggle-text {
+            text-align: center;
+            margin-top: 1rem;
+            color: var(--text-muted);
+        }
+
+        .toggle-text span {
+            color: var(--primary);
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+        }
+
+        .stat-card h3 {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-card .value {
+            font-size: 1.75rem;
+            font-weight: bold;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        th, td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.9rem;
+        }
+
+        th {
+            color: var(--text-muted);
+        }
+
+        .badge {
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            font-weight: bold;
+        }
+
+        .badge-success { background-color: rgba(34, 197, 94, 0.2); color: var(--accent); }
+        .badge-danger { background-color: rgba(239, 68, 68, 0.2); color: var(--danger); }
+        .badge-warning { background-color: rgba(245, 158, 11, 0.2); color: var(--warning); }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo">CashCraft</div>
+        <div id="user-info" class="hidden" style="display: flex; align-items: center;">
+            <span id="nav-email" style="margin-right: 1rem; color: var(--text-muted);"></span>
+            <button onclick="logout()" style="width: auto; padding: 0.5rem 1rem; background-color: var(--danger);">Logout</button>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Auth Section -->
+        <div id="auth-section" class="card" style="max-width: 400px; margin: auto;">
+            <h2 id="auth-title">Login</h2>
+            <form id="auth-form" onsubmit="handleAuth(event)">
+                <div class="form-group">
+                    <label>Email Address</label>
+                    <input type="email" id="auth-email" required placeholder="user@example.com">
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="auth-password" required placeholder="********">
+                </div>
+                <button type="submit" id="auth-btn">Login</button>
+            </form>
+            <div class="toggle-text">
+                <p id="toggle-prompt">Don't have an account? <span onclick="toggleAuthMode()">Register</span></p>
+            </div>
+        </div>
+
+        <!-- User Dashboard -->
+        <div id="user-dashboard" class="hidden">
+            <h2>User Dashboard</h2>
+            <div class="dashboard-grid">
+                <div class="stat-card">
+                    <h3>Total Balance</h3>
+                    <div class="value" id="user-balance">$0.00</div>
+                </div>
+                <div class="stat-card">
+                    <h3>VIP Level</h3>
+                    <div class="value" id="user-level">VIP 0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Team Size</h3>
+                    <div class="value" id="user-team">0 Members</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>Withdraw Funds</h3>
+                <form onsubmit="handleWithdrawal(event)">
+                    <div class="form-group">
+                        <label>Amount ($)</label>
+                        <input type="number" id="withdraw-amount" min="10" required placeholder="10">
+                    </div>
+                    <div class="form-group">
+                        <label>BEP20 Wallet Address (Where to receive funds)</label>
+                        <input type="text" id="withdraw-address" required placeholder="0x...">
+                    </div>
+                    <button type="submit">Submit Withdrawal Request</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Admin Dashboard -->
+        <div id="admin-dashboard" class="hidden">
+            <h2>Master Admin Control Panel</h2>
+            
+            <div class="card">
+                <h3>Global BEP20 Deposit Address Settings</h3>
+                <div class="form-group">
+                    <label>Admin Deposit Address</label>
+                    <input type="text" id="admin-wallet-address" placeholder="0x...">
+                </div>
+                <button onclick="saveAdminWallet()">Update Deposit Address</button>
+            </div>
+
+            <div class="card">
+                <h3>User Withdrawal Requests & Target Addresses</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>User Email</th>
+                            <th>Amount</th>
+                            <th>Target BEP20 Address</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="admin-withdrawals-list">
+                        <!-- Dynamic Withdrawal Requests -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let isLoginMode = true;
+        const ADMIN_EMAIL = "Natasha.lee@gmail.com";
+
+        function initStorage() {
+            if (!localStorage.getItem('users')) localStorage.setItem('users', JSON.stringify([]));
+            if (!localStorage.getItem('withdrawals')) localStorage.setItem('withdrawals', JSON.stringify([]));
+            if (!localStorage.getItem('adminWallet')) localStorage.setItem('adminWallet', '0xDefaultAdminWalletAddressBEP20');
+        }
+        initStorage();
+
+        function toggleAuthMode() {
+            isLoginMode = !isLoginMode;
+            document.getElementById('auth-title').innerText = isLoginMode ? 'Login' : 'Register';
+            document.getElementById('auth-btn').innerText = isLoginMode ? 'Login' : 'Register';
+            document.getElementById('toggle-prompt').innerHTML = isLoginMode ? 
+                'Don\'t have an account? <span onclick="toggleAuthMode()">Register</span>' : 
+                'Already have an account? <span onclick="toggleAuthMode()">Login</span>';
+        }
+
+        function handleAuth(event) {
+            event.preventDefault();
+            const email = document.getElementById('auth-email').value.trim();
+            const password = document.getElementById('auth-password').value;
+
+            // Admin Login Check
+            if (email === ADMIN_EMAIL && password === "NatashaAli12345") {
+                const adminUser = { email, role: 'admin' };
+                sessionStorage.setItem('currentUser', JSON.stringify(adminUser));
+                loadDashboard();
+                return;
+            }
+
+            let users = JSON.parse(localStorage.getItem('users'));
+
+            if (isLoginMode) {
+                const user = users.find(u => u.email === email && u.password === password);
+                if (user) {
+                    sessionStorage.setItem('currentUser', JSON.stringify(user));
+                    loadDashboard();
+                } else {
+                    alert('Invalid email or password!');
+                }
+            } else {
+                if (users.some(u => u.email === email)) {
+                    alert('User already exists with this email!');
+                    return;
+                }
+                const newUser = { email, password, balance: 50.00, level: 'VIP 1', teamSize: 0 };
+                users.push(newUser);
+                localStorage.setItem('users', JSON.stringify(users));
+                sessionStorage.setItem('currentUser', JSON.stringify(newUser));
+                alert('Registration successful!');
+                loadDashboard();
+            }
+        }
+
+        function loadDashboard() {
+            const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
+            if (!currentUser) return;
+
+            document.getElementById('auth-section').classList.add('hidden');
+            document.getElementById('user-info').style.display = 'flex';
+            document.getElementById('user-info').classList.remove('hidden');
+            document.getElementById('nav-email').innerText = currentUser.email;
+
+            if (currentUser.role === 'admin') {
+                document.getElementById('admin-dashboard').classList.remove('hidden');
+                document.getElementById('admin-wallet-address').value = localStorage.getItem('adminWallet');
+                renderAdminWithdrawals();
+            } else {
+                document.getElementById('user-dashboard').classList.remove('hidden');
+                document.getElementById('user-balance').innerText = `$${currentUser.balance.toFixed(2)}`;
+                document.getElementById('user-level').innerText = currentUser.level || 'VIP 1';
+                document.getElementById('user-team').innerText = `${currentUser.teamSize || 0} Members`;
+            }
+        }
+
+        function handleWithdrawal(event) {
+            event.preventDefault();
+            const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
+            const amount = parseFloat(document.getElementById('withdraw-amount').value);
+            const address = document.getElementById('withdraw-address').value.trim();
+
+            if (currentUser.balance < amount) {
+                alert('Insufficient balance!');
+                return;
+            }
+
+            // Deduct balance locally
+            currentUser.balance -= amount;
+            sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
+            
+            // Update users array
+            let users = JSON.parse(localStorage.getItem('users'));
+            users = users.map(u => u.email === currentUser.email ? currentUser : u);
+            localStorage.setItem('users', JSON.stringify(users));
+
+            // Push withdrawal with user's target address to global storage
+            let withdrawals = JSON.parse(localStorage.getItem('withdrawals'));
+            const newWithdrawal = {
+                id: Date.now(),
+                email: currentUser.email,
+                amount: amount,
+                address: address,
+                status: 'Pending'
+            };
+            withdrawals.push(newWithdrawal);
+            localStorage.setItem('withdrawals', JSON.stringify(withdrawals));
+
+            alert('Withdrawal request and your BEP20 address sent successfully to Admin Panel!');
+            document.getElementById('user-balance').innerText = `$${currentUser.balance.toFixed(2)}`;
+            document.getElementById('withdraw-amount').value = '';
+            document.getElementById('withdraw-address').value = '';
+        }
+
+        function saveAdminWallet() {
+            const newWallet = document.getElementById('admin-wallet-address').value.trim();
+            localStorage.setItem('adminWallet', newWallet);
+            alert('Admin Deposit Address updated successfully!');
+        }
+
+        function renderAdminWithdrawals() {
+            const withdrawals = JSON.parse(localStorage.getItem('withdrawals')) || [];
+            const tbody = document.getElementById('admin-withdrawals-list');
+            tbody.innerHTML = '';
+
+            if (withdrawals.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-muted);">No withdrawal requests found.</td></tr>`;
+                return;
+            }
+
+            withdrawals.forEach(w => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${w.email}</td>
+                    <td>$${w.amount.toFixed(2)}</td>
+                    <td style="word-break: break-all; font-family: monospace; color: var(--accent);">${w.address}</td>
+                    <td><span class="badge ${w.status === 'Approved' ? 'badge-success' : 'badge-warning'}">${w.status}</span></td>
+                    <td>
+                        ${w.status === 'Pending' ? `<button onclick="updateWithdrawalStatus(${w.id}, 'Approved')" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">Approve</button>` : 'Completed'}
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function updateWithdrawalStatus(id, status) {
+            let withdrawals = JSON.parse(localStorage.getItem('withdrawals'));
+            withdrawals = withdrawals.map(w => w.id === id ? { ...w, status } : w);
+            localStorage.setItem('withdrawals', JSON.stringify(withdrawals));
+            renderAdminWithdrawals();
+        }
+
+        function logout() {
+            sessionStorage.removeItem('currentUser');
+            window.location.reload();
+        }
+
+        window.onload = function() {
+            if (sessionStorage.getItem('currentUser')) {
+                loadDashboard();
+            }
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CashCraft - Dashboard & Investment</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #0b0f19; color: #ffffff; margin: 0; padding: 0; }
+        .container { max-width: 480px; margin: auto; padding: 20px; background: #131a2b; min-height: 100vh; box-sizing: border-box; padding-bottom: 80px; }
+        .card { background: #1c263d; padding: 15px; border-radius: 10px; margin-bottom: 15px; border: 1px solid #2a3b5e; }
+        h2, h3 { color: #00ffcc; margin-top: 0; }
+        input, select { width: 100%; padding: 10px; margin: 8px 0; background: #0b0f19; border: 1px solid #2a3b5e; color: #fff; border-radius: 5px; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; background: #00ffcc; color: #0b0f19; border: none; font-weight: bold; border-radius: 5px; cursor: pointer; margin-top: 10px; }
+        button:hover { background: #00b386; color: #fff; }
+        .nav-bar { position: fixed; bottom: 0; left: 0; right: 0; background: #131a2b; display: flex; justify-content: space-around; padding: 10px 0; border-top: 1px solid #2a3b5e; max-width: 480px; margin: auto; }
+        .nav-item { text-align: center; color: #8c9bae; font-size: 12px; cursor: pointer; }
+        .nav-item.active { color: #00ffcc; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- AUTH SECTION -->
+    <div id="auth-section" class="card">
+        <h2>CashCraft Login / Register</h2>
+        <input type="email" id="auth-email" placeholder="Enter Email Address">
+        <button onclick="handleAuth()">Login / Register</button>
+    </div>
+
+    <!-- MAIN APP SECTIONS (Hidden initially until login) -->
+    <div id="app-sections" class="hidden">
+        
+        <!-- INVEST TAB -->
+        <div id="tab-invest" class="section">
+            <div class="card">
+                <h3>Send your USDT investment to Official Admin BEP20 Address:</h3>
+                <input type="text" readonly value="TXy7u39vKszAdminDefaultTRC20WalletAddress91b" style="background:#0b0f19; color:#00ffcc; font-size:12px;">
+                
+                <label>Select Investment Plan:</label>
+                <select id="inv_amt">
+                    <option value="20">$20 Starter Plan (Daily: $0.70)</option>
+                    <option value="50">$50 Basic Plan (Daily: $1.85)</option>
+                    <option value="150">$150 Standard Plan (Daily: $6.00)</option>
+                    <option value="500">$500 Advanced Plan (Daily: $22.00)</option>
+                    <option value="1000">$1000 VIP Plan (Daily: $48.00)</option>
+                </select>
+
+                <label>Transaction ID / Hash Message:</label>
+                <input type="text" id="inv_msg" placeholder="Enter transaction hash or ID">
+
+                <label>Upload Payment Proof Screenshot:</label>
+                <input type="file" id="inv_file" accept="image/*">
+
+                <label>Upload ID Card (FRONT):</label>
+                <input type="file" id="id_front_file" accept="image/*">
+
+                <label>Upload ID Card (BACK):</label>
+                <input type="file" id="id_back_file" accept="image/*">
+
+                <button onclick="submitInvestment()">Submit Payment & ID Card Details to Admin</button>
+            </div>
+            
+            <div id="status-card" class="card hidden">
+                <h3>Status: <span id="status-text" style="color:orange;">Pending Approval</span></h3>
+                <p>Your investment and ID documents have been submitted to Admin. Please wait up to 24 hours for approval.</p>
+            </div>
+        </div>
+
+        <!-- ADMIN PANEL TAB -->
+        <div id="tab-admin" class="section hidden">
+            <div class="card">
+                <h2>Admin Control Panel</h2>
+                <div id="admin-pending-list"></div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- BOTTOM NAVIGATION -->
+<div class="nav-bar hidden" id="bottom-nav">
+    <div class="nav-item active" onclick="switchTab('invest')">Invest</div>
+    <div class="nav-item" onclick="switchTab('admin')">Admin Panel</div>
+</div>
+
+<script>
+    let loggedUser = localStorage.getItem('loggedUser') || null;
+
+    window.onload = function() {
+        if(loggedUser) {
+            document.getElementById('auth-section').classList.add('hidden');
+            document.getElementById('app-sections').classList.remove('hidden');
+            document.getElementById('bottom-nav').classList.remove('hidden');
+            checkUserStatus();
+        }
+    };
+
+    function handleAuth() {
+        let email = document.getElementById('auth-email').value.trim();
+        if(!email) { alert('Please enter email'); return; }
+        
+        let users = JSON.parse(localStorage.getItem('users')) || [];
+        let user = users.find(x => x.email === email);
+        
+        if(!user) {
+            user = { email: email, investment: 0, investmentNote: '', investmentScreenshot: '', idFront: '', idBack: '', approved: 0 };
+            users.push(user);
+            localStorage.setItem('users', JSON.stringify(users));
+        }
+        
+        localStorage.setItem('loggedUser', email);
+        loggedUser = email;
+        
+        document.getElementById('auth-section').classList.add('hidden');
+        document.getElementById('app-sections').classList.remove('hidden');
+        document.getElementById('bottom-nav').classList.remove('hidden');
+        checkUserStatus();
+    }
+
+    function switchTab(tabName) {
+        document.querySelectorAll('.section').forEach(s => s.classList.add('hidden'));
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('hidden') ? null : n.classList.remove('active'));
+        
+        if(tabName === 'invest') {
+            document.getElementById('tab-invest').classList.remove('hidden');
+        } else if(tabName === 'admin') {
+            document.getElementById('tab-admin').classList.remove('hidden');
+            loadAdminPanel();
+        }
+    }
+
+    // Fully Fixed Investment Submission with Image Handlers (Base64 conversion)
+    function submitInvestment() {
+        let amtField = document.getElementById('inv_amt');
+        let msgField = document.getElementById('inv_msg');
+        let fileInput = document.getElementById('inv_file');
+        let frontInput = document.getElementById('id_front_file');
+        let backInput = document.getElementById('id_back_file');
+        
+        if(!msgField || !msgField.value.trim()) { alert('Please enter transaction ID or hash message!'); return; }
+        if(!fileInput || fileInput.files.length === 0) { alert('Please upload payment proof screenshot!'); return; }
+        if(!frontInput || frontInput.files.length === 0) { alert('Please upload ID Card FRONT image!'); return; }
+        if(!backInput || backInput.files.length === 0) { alert('Please upload ID Card BACK image!'); return; }
+
+        let amt = parseFloat(amtField.value) || 20;
+        let msg = msgField.value.trim();
+
+        let readerPayment = new FileReader();
+        readerPayment.onload = function (e1) {
+            let payImg = e1.target.result;
+            let readerFront = new FileReader();
+            readerFront.onload = function (e2) {
+                let frontImg = e2.target.result;
+                let readerBack = new FileReader();
+                readerBack.onload = function (e3) {
+                    let backImg = e3.target.result;
+
+                    let users = JSON.parse(localStorage.getItem('users')) || [];
+                    let uIndex = users.findIndex(x => x.email === loggedUser);
+                    
+                    if (uIndex !== -1) {
+                        users[uIndex].investment = amt;
+                        users[uIndex].investmentNote = msg;
+                        users[uIndex].investmentScreenshot = payImg;
+                        users[uIndex].idFront = frontImg;
+                        users[uIndex].idBack = backImg;
+                        users[uIndex].approved = 0; // 0 means Pending Approval
+                        
+                        localStorage.setItem('users', JSON.stringify(users));
+
+                        alert('Payment proof and ID cards submitted successfully! Status is now Pending Admin Approval.');
+                        checkUserStatus();
+                    } else {
+                        alert('User session error. Please login again.');
+                    }
+                };
+                readerBack.readAsDataURL(backInput.files[0]);
+            };
+            readerFront.readAsDataURL(frontInput.files[0]);
+        };
+        readerPayment.readAsDataURL(fileInput.files[0]);
+    }
+
+    function checkUserStatus() {
+        let users = JSON.parse(localStorage.getItem('users')) || [];
+        let user = users.find(x => x.email === loggedUser);
+        if(user && user.investment > 0) {
+            document.getElementById('status-card').classList.remove('hidden');
+            let statusText = document.getElementById('status-text');
+            if(user.approved === 1) {
+                statusText.innerText = "Approved Active";
+                statusText.style.color = "lightgreen";
+            } else {
+                statusText.innerText = "Pending Admin Approval (24 Hours)";
+                statusText.style.color = "orange";
+            }
+        }
+    }
+
+    function loadAdminPanel() {
+        let users = JSON.parse(localStorage.getItem('users')) || [];
+        let container = document.getElementById('admin-pending-list');
+        container.innerHTML = '';
+        
+        let pendingUsers = users.filter(u => u.investment > 0 && u.approved === 0);
+        
+        if(pendingUsers.length === 0) {
+            container.innerHTML = '<p>No pending investment requests found.</p>';
+            return;
+        }
+
+        pendingUsers.forEach((u, index) => {
+            container.innerHTML += `
+                <div style="background:#0b0f19; padding:10px; margin-bottom:10px; border-radius:5px; border:1px solid #2a3b5e;">
+                    <p><b>User:</b> ${u.email}</p>
+                    <p><b>Plan Amount:</b> $${u.investment}</p>
+                    <p><b>Txn ID:</b> ${u.investmentNote}</p>
+                    <p><b>Payment Proof:</b><br><img src="${u.investmentScreenshot}" style="max-width:100px; border-radius:4px;"></p>
+                    <p><b>ID Front:</b><br><img src="${u.idFront}" style="max-width:100px; border-radius:4px;"></p>
+                    <p><b>ID Back:</b><br><img src="${u.idBack}" style="max-width:100px; border-radius:4px;"></p>
+                    <button onclick="approveUser('${u.email}')" style="background:#00ffcc; color:#000;">Approve Request</button>
+                </div>
+            `;
+        });
+    }
+
+    function approveUser(email) {
+        let users = JSON.parse(localStorage.getItem('users')) || [];
+        let uIndex = users.findIndex(x => x.email === email);
+        if(uIndex !== -1) {
+            users[uIndex].approved = 1;
+            localStorage.setItem('users', JSON.stringify(users));
+            alert('User approved successfully!');
+            loadAdminPanel();
+        }
+    }
+</script>
+
+</body>
+</html>

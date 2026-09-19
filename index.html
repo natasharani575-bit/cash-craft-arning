@@ -1,0 +1,18 @@
+<!-- Admin User Detail / Investment Approval Section -->
+<div class="admin-investment-card" id="user-investment-{{userId}}">
+    <h3>يوزر کی انویسٹमेंट کی تفصیلات</h3>
+    <p><strong>یوزر نام:</strong> <span id="admin-username">{{userName}}</span></p>
+    <p><strong>جی میل:</strong> <span id="admin-useremail">{{userEmail}}</span></p>
+    <p><strong>سلెక్ٹڈ پلان:</strong> <span id="admin-plan">{{selectedPlan}}</span></p>
+    <p><strong>ٹرانزैक्शन آئی ڈی:</strong> <span id="admin-trxid">{{transactionId}}</span></p>
+    
+    <div class="payment-screenshot-box">
+        <p><strong>پیمنٹ سکرین شاٹ:</strong></p>
+        <img src="{{screenshotUrl}}" alt="Payment Proof" style="max-width: 300px; border-radius: 8px; border: 1px solid #ccc; cursor: pointer;" onclick="window.open(this.src)">
+    </div>
+
+    <div class="approval-actions" style="margin-top: 15px;">
+        <button onclick="approveInvestment('{{userId}}')" class="btn-approve" style="background-color: #28a745; color: white; padding: 8px 15px; border: none; border-radius: 4px; cursor: pointer;">अप्रूव کریں (Approve)</button>
+        <button onclick="rejectInvestment('{{userId}}')" class="btn-reject" style="background-color: #dc3545; color: white; padding: 8px 15px; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px;">رد کریں (Reject)</button>
+    </div>
+</div>

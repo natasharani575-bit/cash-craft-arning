@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CashCraft - Supabase Cloud Integrated System</title>
+    <!-- Supabase JS Client Library -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background: #0a0f1d; color: #fff; padding-bottom: 70px; }
+        .app-container { max-width: 600px; margin: auto; background: #0f1c3f; border-radius: 0 0 14px 14px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); overflow: hidden; border: 1px solid #1e3a8a; min-height: 100vh; display: flex; flex-direction: column; position: relative; }
+        
+        /* Navbar */
+        .navbar { background: #172554; padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1e40af; position: sticky; top: 0; z-index: 100; }
+        .logo { font-size: 18px; font-weight: bold; color: #60a5fa; display: flex; align-items: center; gap: 6px; }
+        .user-info { font-size: 12px; color: #93c5fd; display: flex; align-items: center; gap: 8px; }
+        
+        /* User Profile Avatar Style */
+        .nav-avatar { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 2px solid #60a5fa; background: #0a0f1d; }
+        .profile-avatar-large { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid #3b82f6; margin-bottom: 10px; background: #0a0f1d; box-shadow: 0 4px 12px rgba(0,0,0,0.5); }
+
+        /* Level Badge Styles */
+        .level-badge { background: linear-gradient(135deg, #f59e0b, #d97706); color: #fff; font-size: 10px; font-weight: bold; padding: 2px 8px; border-radius: 12px; display: inline-flex; align-items: center; gap: 3px; border: 1px solid #fde047; box-shadow: 0 2px 6px rgba(0,0,0,0.3); text-transform: uppercase; }
+
+        /* Modern Bottom Navigation Bar with Icons */
+        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; max-width: 600px; margin: auto; background: #0b132b; display: flex; justify-content: space-around; padding: 8px 0; border-top: 1px solid #1d4ed8; z-index: 1000; box-shadow: 0 -5px 15px rgba(0,0,0,0.5); }
+        .nav-item { background: transparent; border: none; color: #93c5fd; display: flex; flex-direction: column; align-items: center; font-size: 9px; cursor: pointer; flex: 1; transition: 0.2s; }
+        .nav-item span.icon { font-size: 16px; margin-bottom: 2px; }
+        .nav-item.active { color: #60a5fa; font-weight: bold; }
+
+        .content { flex: 1; padding: 20px; overflow-y: auto; padding-bottom: 30px; }
+        
+        /* Forms & Cards */
+        .card { background: #172554; padding: 16px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #1e40af; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+        .card h3 { color: #f8fafc; font-size: 16px; margin-bottom: 10px; border-bottom: 1px solid #1e40af; padding-bottom: 6px; }
+        input, select { width: 100%; padding: 12px; margin: 6px 0 12px 0; background: #0a0f1d; border: 1px solid #3b82f6; border-radius: 8px; color: #fff; font-size: 14px; }
+        .btn { background: #2563eb; color: white; border: none; padding: 12px 15px; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; font-size: 14px; transition: 0.2s; }
+        .btn:hover { background: #1d4ed8; }
+        .btn-success { background: #059669; }
+        .btn-success:hover { background: #047857; }
+        .btn-danger { background: #dc2626; color: #fff; }
+        .btn:disabled { background: #334155; color: #94a3b8; cursor: not-allowed; }
+        
+        /* Task Card Styling */
+        .task-item { background: #0a0f1d; border: 1px solid #3b82f6; border-radius: 8px; padding: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+        .task-info h4 { font-size: 14px; color: #60a5fa; margin-bottom: 3px; }
+        .task-info p { font-size: 12px; color: #93c5fd; }
+
+        /* Clean Full Image Slider Styles */
+        .slider-container { position: relative; width: 100%; height: 320px; border-radius: 12px; overflow: hidden; margin-bottom: 15px; background: #0a0f1d; box-shadow: 0 6px 20px rgba(0,0,0,0.5); }
+        .slide { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; transition: opacity 1s ease-in-out; display: flex; flex-direction: column; justify-content: flex-end; background-size: cover; background-position: center; }
+        .slide.active { opacity: 1; }
+        .slide-caption { background: rgba(10, 15, 29, 0.85); color: #fff; padding: 12px 15px; font-size: 12px; text-align: center; border-top: 1px solid rgba(59,130,246,0.3); backdrop-filter: blur(4px); }
+        .slide-caption b { color: #60a5fa; display: block; font-size: 14px; margin-bottom: 3px; }
+
+        /* Golden Cash Wheel Styling */
+        .wheel-box { text-align: center; background: radial-gradient(circle, #172554 0%, #0a0f1d 100%); padding: 15px; border-radius: 15px; border: 3px solid #3b82f6; box-shadow: 0 0 20px rgba(59,130,246,0.4); display: inline-block; margin: auto; }
+        .wheel-title { background: linear-gradient(to bottom, #60a5fa, #2563eb); color: #fff; font-weight: bold; padding: 4px 15px; border-radius: 20px; font-size: 16px; display: inline-block; margin-bottom: 8px; text-transform: uppercase; border: 2px solid #93c5fd; }
+        .wheel-wrap { position: relative; display: inline-block; }
+        canvas { background: #0a0f1d; border-radius: 50%; border: 5px solid #1d4ed8; }
+        .pointer { position: absolute; top: -5px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 10px solid transparent; border-right: 10px solid transparent; border-bottom: 20px solid #60a5fa; z-index: 10; }
+        
+        /* Instant Win Popup Banner Style */
+        .win-popup { position: fixed; top: 20px; left: 50%; transform: translateX(-50%) scale(0.7); background: linear-gradient(135deg, #059669, #10b981); color: #fff; padding: 15px 30px; border-radius: 30px; font-size: 20px; font-weight: bold; box-shadow: 0 10px 25px rgba(0,0,0,0.6); z-index: 9999; border: 3px solid #6ee7b7; opacity: 0; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); pointer-events: none; text-align: center; }
+        .win-popup.show { transform: translateX(-50%) scale(1); opacity: 1; }
+
+        /* Chat Box */
+        .chat-container { display: flex; flex-direction: column; height: 260px; }
+        .chat-messages { flex: 1; background: #0a0f1d; border: 1px solid #1e40af; border-radius: 8px; padding: 8px; overflow-y: auto; margin-bottom: 6px; }
+        .msg { padding: 6px 10px; margin: 4px 0; border-radius: 8px; max-width: 85%; font-size: 11px; word-break: break-all; }
+        .msg-user { background: #1e3a8a; margin-left: auto; }
+        .msg-admin { background: #1e293b; margin-right: auto; }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #1e40af; padding: 8px; text-align: center; font-size: 11px; }
+        th { background: #172554; color: #93c5fd; }
+        .error-box { background: #7f1d1d; color: #fca5a5; padding: 12px; border-radius: 8px; text-align: center; margin-bottom: 12px; font-size: 13px; border: 1px solid #991b1b; }
+        .link-text { color: #60a5fa; cursor: pointer; text-align: center; margin-top: 12px; font-size: 13px; }
+    </style>
+</head>
+<body>
+
+<div class="app-container" id="app">
+    <div id="winPopup" class="win-popup">🎉 WON: $<span id="popup-amt">0</span>!</div>
+</div>
+
+<script>
+    // Supabase Cloud Initialization
+    const SUPABASE_URL = 'https://cashcraft.supabase.co';
+    const SUPABASE_ANON_KEY = 'Sb_publishable_XApv7V9eos1gtwJRssqW7A_Y7NyfGkG';
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    let defaultAdmin = { 
+        name: 'Admin Master', 
+        email: 'Natasha.lee@gmail.com', 
+        pass: 'NatashaAli12345', 
+        balance: 0, 
+        investment: 0, 
+        profit: 0, 
+        approved: 1, 
+        ref: 'ADMIN', 
+        referredBy: '', 
+        avatar: '', 
+        count: 0, 
+        level: 1, 
+        lastTaskDate: '', 
+        taskReward: 0.35, 
+        wheelBalance: 0, 
+        wheelSequence: [], 
+        wheelLimit: 0, 
+        spinsUsed: 0, 
+        withdrawals: [], 
+        idFront: '', 
+        idBack: '' 
+    };
+
+    let users = [];
+    let adminWallet = '0xDefaultAdminBEP20WalletAddress91bABC';
+
+    // Cloud Database Sync Function
+    async function loadDataFromCloud() {
+        try {
+            let { data, error } = await supabaseClient.from('cashcraft_store').select('*').eq('id', 'main_data').single();
+            if (data && data.users) {
+                users = data.users;
+                adminWallet = data.wallet || adminWallet;
+            } else {
+                users = [defaultAdmin];
+                await saveDatatoCloud();
+            }
+        } catch (e) {
+            console.log('Cloud fetch error, using local fallback', e);
+            users = JSON.parse(localStorage.getItem('users')) || [defaultAdmin];
+        }
+
+        let adminIndex = users.findIndex(x => x.ref === 'ADMIN' || x.email === 'Natasha.lee@gmail.com');
+        if (adminIndex !== -1) {
+            users[adminIndex].email = 'Natasha.lee@gmail.com';
+            users[adminIndex].pass = 'NatashaAli12345';
+            users[adminIndex].name = 'Admin Master';
+            users[adminIndex].approved = 1;
+        } else {
+            users.unshift(defaultAdmin);
+        }
+        render();
+    }
+
+    async function saveDatatoCloud() {
+        try {
+            localStorage.setItem('users', JSON.stringify(users));
+            localStorage.setItem('admin_wallet', adminWallet);
+            await supabaseClient.from('cashcraft_store').upsert({ id: 'main_data', users: users, wallet: adminWallet });
+        } catch (e) {
+            console.log('Cloud sync error', e);
+        }
+    }
+
+    let loggedUser = sessionStorage.getItem('logged_user');
+    let currentTab = 'dashboard';
+    let authMode = 'register';
+    let sliderInterval = null;
+
+    window.addEventListener('DOMContentLoaded', () => {
+        let urlParams = new URLSearchParams(window.location.search);
+        let refParam = urlParams.get('ref');
+        if (refParam && !loggedUser) {
+            sessionStorage.setItem('temp_ref', refParam);
+        }
+        loadDataFromCloud();
+    });
+
+    function calculateLevel(teamCount) {
+        if (teamCount >= 100) return 8;
+        if (teamCount >= 70) return 7;
+        if (teamCount >= 60) return 6;
+        if (teamCount >= 50) return 5;
+        if (teamCount >= 30) return 4;
+        if (teamCount >= 10) return 3;
+        if (teamCount >= 6) return 2;
+        return 1;
+    }
+
+    function render() {
+        if (sliderInterval) { clearInterval(sliderInterval); sliderInterval = null; }
+        let app = document.getElementById('app');
+        let popupHtml = `<div id="winPopup" class="win-popup">🎉 WON: $<span id="popup-amt">0</span>!</div>`;
+
+        if (!loggedUser) {
+            document.body.style.paddingBottom = "10px";
+            let savedRef = sessionStorage.getItem('temp_ref') || '';
+            if (authMode === 'register') {
+                app.innerHTML = popupHtml + `
+                    <div style="padding: 30px;">
+                        <div style="text-align:center; margin-bottom:20px;">
+                            <h2 style="color:#60a5fa; font-size:24px;">💎 CashCraft</h2>
+                            <p style="color:#93c5fd; font-size:13px; margin-top:5px;">Create your account (Cloud Synced)</p>
+                        </div>
+                        <div class="card">
+                            <label style="font-size:12px; color:#cbd5e1;">Profile Picture (DP):</label>
+                            <input type="file" id="reg_avatar" accept="image/*">
+                            <input type="text" id="reg_name" placeholder="Full Name">
+                            <input type="email" id="reg_email" placeholder="Gmail Address">
+                            <input type="password" id="reg_pass" placeholder="Password">
+                            <input type="text" id="reg_ref" value="${savedRef}" placeholder="Referral Code (Optional)">
+                            <button class="btn btn-success" onclick="register()">Register Now</button>
+                        </div>
+                        <p class="link-text" onclick="setAuthMode('login')">Already have an account? <b>Login here</b></p>
+                    </div>`;
+            } else {
+                app.innerHTML = popupHtml + `
+                    <div style="padding: 30px;">
+                        <div style="text-align:center; margin-bottom:20px;">
+                            <h2 style="color:#60a5fa; font-size:24px;">💎 CashCraft</h2>
+                            <p style="color:#93c5fd; font-size:13px; margin-top:5px;">Welcome Back! Please Login</p>
+                        </div>
+                        <div class="card">
+                            <input type="email" id="log_email" placeholder="Gmail Address">
+                            <input type="password" id="log_pass" placeholder="Password">
+                            <button class="btn" onclick="login()">Login</button>
+                        </div>
+                        <p class="link-text" onclick="setAuthMode('register')">Don't have an account? <b>Register First</b></p>
+                    </div>`;
+            }
+        } else if (loggedUser === 'Natasha.lee@gmail.com') {
+            document.body.style.paddingBottom = "10px";
+            let usersHtml = '';
+            let tasksControlHtml = '';
+            let adminWithdrawsHtml = '';
+            let userInvestmentApprovalScreensHtml = '';
+            let userTeamTreeHtml = '';
+            
+            users.forEach((u, i) => {
+                if(u.email !== 'Natasha.lee@gmail.com') {
+                    let limitVal = (u.wheelLimit !== undefined && u.wheelLimit !== null && !isNaN(u.wheelLimit)) ? u.wheelLimit : 0;
+                    let spinsUsedVal = (u.spinsUsed !== undefined && u.spinsUsed !== null && !isNaN(u.spinsUsed)) ? u.spinsUsed : 0;
+                    
+                    let directTeam = users.filter(x => x.referredBy === u.ref);
+                    let userTeamCount = directTeam.length;
+                    let autoLevel = calculateLevel(userTeamCount);
+                    let userLevel = u.level !== undefined ? u.level : autoLevel;
+
+                    usersHtml += `<tr>
+                        <td>
+                            <img src="${u.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80'}" style="width:30px; height:30px; border-radius:50%; object-fit:cover; vertical-align:middle; margin-right:4px;">
+                            <b>${u.name}</b><br><small style="color:#93c5fd;">📧 ${u.email}</small><br><small style="color:#fde047; font-weight:bold;">🔑 Pass: ${u.pass}</small><br><span class="level-badge" style="margin-top:2px;">⭐ Lvl ${userLevel}</span>
+                        </td>
+                        <td>
+                            <input type="number" id="bal_${i}" value="${u.balance.toFixed(2)}" step="0.01" style="width:65px; padding:4px; margin:0; text-align:center;">
+                            <button onclick="updateUserBal(${i})" class="btn" style="padding:2px 4px; font-size:9px; margin-top:2px;">Set</button>
+                        </td>
+                        <td>${userTeamCount} Members</td>
+                        <td>
+                            <input type="number" id="limit_${i}" value="${limitVal}" min="0" max="10" style="width:45px; padding:4px; margin:0; text-align:center;">
+                            <button onclick="updateUserWheelLimit(${i})" class="btn" style="padding:2px 4px; font-size:9px; margin-top:2px;">Set Limit</button>
+                        </td>
+                        <td>
+                            <input type="number" id="level_${i}" value="${userLevel}" min="1" max="8" style="width:45px; padding:4px; margin:0; text-align:center;">
+                            <button onclick="updateUserLevel(${i})" class="btn" style="padding:2px 4px; font-size:9px; margin-top:2px;">Set Lvl</button>
+                        </td>
+                        <td>${u.approved == 0 ? `<button onclick="adminApproveInvestment(${i})" class="btn-success" style="padding:4px 6px; font-size:9px;">Approve</button>` : '<span style="color:#34d399">Active</span>'}</td>
+                    </tr>`;
+
+                    let memberRows = directTeam.length > 0 ? directTeam.map(m => {
+                        let subTeam = users.filter(x => x.referredBy === m.ref);
+                        return `<tr><td><b>Direct:</b> ${m.name} (${m.email})</td><td><span class="level-badge">Lvl ${calculateLevel(subTeam.length)}</span></td></tr>`;
+                    }).join('') : `<tr><td colspan="2" style="color:#93c5fd;">No direct members yet</td></tr>`;
+
+                    adminTeamTreeHtml += `
+                        <div class="card" style="border:1px solid #3b82f6; margin-bottom:10px;">
+                            <h4 style="color:#60a5fa; font-size:14px; margin-bottom:6px;">Gmail: ${u.email} | User: ${u.name} (Team: ${userTeamCount})</h4>
+                            <table><tr><th>Member Hierarchy</th><th>Level Badge</th></tr>${memberRows}</table>
+                        </div>`;
+
+                    userInvestmentApprovalScreensHtml += `
+                        <div class="card" style="border: 2px solid ${u.approved == 0 ? '#f59e0b' : '#34d399'}; margin-bottom: 12px;">
+                            <h3 style="color:#60a5fa;">💳 Investment Proof: ${u.name} (${u.email})</h3>
+                            <p style="font-size:12px;"><b>Plan Amount:</b> $${(u.investment || 0).toFixed(2)} | <b>Status:</b> ${u.approved == 0 ? 'Pending ⏳' : 'Approved ✅'}</p>
+                            ${u.investmentScreenshot ? `<a href="${u.investmentScreenshot}" target="_blank"><img src="${u.investmentScreenshot}" style="max-width:100%; max-height:130px; border-radius:6px; margin-top:6px;"></a>` : ''}
+                            <div style="margin-top: 10px; display: flex; gap: 10px;">
+                                <button class="btn btn-success" onclick="adminApproveInvestment(${i})" style="flex:1;">Approve ✅</button>
+                                <button class="btn btn-danger" onclick="adminRejectInvestment(${i})" style="flex:1;">Reject ❌</button>
+                            </div>
+                        </div>`;
+
+                    if (u.withdrawals && u.withdrawals.length > 0) {
+                        u.withdrawals.forEach((w, wIndex) => {
+                            let statusActionHtml = w.status === 'Approved' ? '<span style="color:#34d399">Approved</span>' : `<button onclick="approveWithdrawal(${i},${wIndex})" class="btn-success" style="padding:4px 8px; font-size:9px;">Approve</button>`;
+                            adminWithdrawsHtml += `<tr><td>${u.name}</td><td>$${w.amount.toFixed(2)}</td><td>${w.address}</td><td>${statusActionHtml}</td></tr>`;
+                        });
+                    }
+                }
+            });
+
+            app.innerHTML = popupHtml + `
+                <div class="navbar">
+                    <div class="logo">👑 Admin Master Panel (Cloud Synced)</div>
+                    <button onclick="logout()" class="btn-danger" style="width:auto; padding:6px 12px; font-size:12px;">Logout</button>
+                </div>
+                <div class="content">
+                    <div class="card">
+                        <h3>⚙️ Set Official BEP20 Deposit Address</h3>
+                        <input type="text" id="admin_wallet_input" value="${adminWallet}">
+                        <button class="btn btn-success" onclick="saveAdminWallet()">Update Wallet</button>
+                    </div>
+                    <div class="card"><h3>💳 Investment & ID Proof Approvals</h3>${userInvestmentApprovalScreensHtml || '<p>No pending proofs.</p>'}</div>
+                    <div class="card"><h3>💵 Withdrawal Requests</h3><table><tr><th>User</th><th>Amount</th><th>Wallet</th><th>Action</th></tr>${adminWithdrawsHtml || '<tr><td colspan="4">No requests</td></tr>'}</table></div>
+                    <div class="card"><h3>👥 Team Hierarchies</h3>${adminTeamTreeHtml}</div>
+                    <div class="card"><h3>👥 User Management</h3><table><tr><th>User</th><th>Balance</th><th>Team</th><th>Limit</th><th>Level</th><th>Status</th></tr>${usersHtml}</table></div>
+                </div>`;
+        } else {
+            document.body.style.paddingBottom = "70px";
+            let u = users.find(x => x.email === loggedUser);
+            if (!u) { logout(); return; }
+
+            let myTeam = users.filter(x => x.referredBy === u.ref);
+            let teamCount = myTeam.length;
+            let currentLevel = calculateLevel(teamCount);
+            if (u.level !== currentLevel) {
+                u.level = currentLevel;
+                saveDatatoCloud();
+            }
+
+            let userAvatar = u.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80';
+
+            app.innerHTML = popupHtml + `
+                <div class="navbar" style="padding: 10px 15px;">
+                    <div class="logo">💎 CashCraft</div>
+                    <div class="user-info">
+                        <img src="${userAvatar}" class="nav-avatar" alt="DP">
+                        <div><b>${u.name}</b> <span class="level-badge">⭐ Lvl ${currentLevel}</span></div>
+                    </div>
+                </div>
+                <div class="content" id="tab-content"></div>
+                <div class="bottom-nav">
+                    <button class="nav-item ${currentTab=='dashboard'?'active':''}" onclick="switchTab('dashboard')"><span class="icon">🏠</span><span>Home</span></button>
+                    <button class="nav-item ${currentTab=='investment'?'active':''}" onclick="switchTab('investment')"><span class="icon">💳</span><span>Invest</span></button>
+                    <button class="nav-item ${currentTab=='tasks'?'active':''}" onclick="switchTab('tasks')"><span class="icon">📋</span><span>Tasks</span></button>
+                    <button class="nav-item ${currentTab=='wheel'?'active':''}" onclick="switchTab('wheel')"><span class="icon">🎡</span><span>Wheel</span></button>
+                    <button class="nav-item ${currentTab=='withdraw'?'active':''}" onclick="switchTab('withdraw')"><span class="icon">💵</span><span>Withdraw</span></button>
+                    <button class="nav-item ${currentTab=='referral'?'active':''}" onclick="switchTab('referral')"><span class="icon">👥</span><span>Team</span></button>
+                </div>`;
+            renderTabContent();
+        }
+    }
+
+    function setAuthMode(mode) { authMode = mode; render(); }
+    function switchTab(tab) { currentTab = tab; render(); }
+
+    function renderTabContent() {
+        let u = users.find(x => x.email === loggedUser);
+        if(!u) return;
+
+        let container = document.getElementById('tab-content');
+        let todayStr = new Date().toDateString();
+        let taskDoneToday = (u.lastTaskDate === todayStr);
+        let currentReward = u.taskReward !== undefined ? u.taskReward : 0.35;
+        let myTeam = users.filter(x => x.referredBy === u.ref);
+        let teamCount = myTeam.length;
+        let userLevel = calculateLevel(teamCount);
+        let myRefLink = window.location.origin + window.location.pathname + '?ref=' + u.ref;
+
+        if (currentTab === 'dashboard') {
+            container.innerHTML = `
+                <div class="card" style="background: linear-gradient(135deg, #1e3a8a, #172554); text-align: center; border: 2px solid #60a5fa; padding: 22px 16px;">
+                    <p style="font-size: 13px; color: #93c5fd; text-transform: uppercase; font-weight: bold;">Main Balance & Cloud Sync</p>
+                    <div style="font-size: 38px; font-weight: 800; color: #34d399; margin: 6px 0;">$${u.balance.toFixed(2)}</div>
+                    <p style="font-size: 12px; color: #cbd5e1;">Cloud Database Active</p>
+                </div>
+                <div class="card">
+                    <h3>✨ Welcome Back, ${u.name} <span class="level-badge">⭐ Level ${userLevel}</span></h3>
+                    <p style="font-size:13px; margin-top:4px;"><b>Account Status:</b> ${u.approved == 1 ? '<span style="color:#34d399">Active ✅</span>' : '<span style="color:#f59e0b">Pending ⏳</span>'}</p>
+                    <p style="font-size:13px; margin-top:4px;"><b>Team Count:</b> ${teamCount} Members</p>
+                </div>
+                <div class="card">
+                    <h3>🚀 Referral Link</h3>
+                    <div style="background:#0a0f1d; padding:8px; border-radius:6px; border:1px solid #3b82f6; font-size:11px; color:#60a5fa; word-break:break-all; margin-bottom:8px;">${myRefLink}</div>
+                    <button class="btn btn-success" onclick="navigator.clipboard.writeText('${myRefLink}'); alert('Copied!');">Copy Link</button>
+                    <button class="btn btn-danger" style="margin-top:8px;" onclick="logout()">Logout</button>
+                </div>`;
+        } else if (currentTab === 'investment') {
+            container.innerHTML = `
+                <div class="card">
+                    <h3>💳 BEP20 Deposit & ID Verification</h3>
+                    <select id="inv_amt">
+                        <option value="25">$25 Plan (Pay $26) ➔ Return $35</option>
+                        <option value="50" selected>$50 Plan (Pay $51) ➔ Return $70</option>
+                        <option value="100">$100 Plan (Pay $101) ➔ Return $130</option>
+                    </select>
+                    <input type="text" id="inv_msg" placeholder="Transaction ID / Hash Note" value="${u.investmentNote || ''}">
+                    <label style="font-size:12px;">Payment Screenshot:</label>
+                    <input type="file" id="inv_file" accept="image/*">
+                    <button class="btn btn-success" onclick="submitInvestment()" style="margin-top:10px;">Submit to Admin</button>
+                </div>`;
+        } else if (currentTab === 'tasks') {
+            container.innerHTML = `
+                <div class="card">
+                    <h3>📋 Daily System Task</h3>
+                    <button class="btn btn-success" ${u.approved == 0 || taskDoneToday ? 'disabled' : ''} onclick="claimTask(${currentReward})">
+                        ${taskDoneToday ? 'Completed' : 'Claim $' + currentReward.toFixed(2)}
+                    </button>
+                </div>`;
+        } else if (currentTab === 'wheel') {
+            container.innerHTML = `<div class="card" style="text-align:center;"><h3>🎡 Golden Cash Wheel</h3><p>Cloud Synced Spins</p></div>`;
+        } else if (currentTab === 'withdraw') {
+            container.innerHTML = `
+                <div class="card">
+                    <h3>💵 Request Withdrawal</h3>
+                    <select id="wd_amount"><option value="25">$25 Withdrawal</option><option value="50">$50 Withdrawal</option></select>
+                    <input type="text" id="wd_address" placeholder="BEP20 Address">
+                    <button class="btn btn-success" onclick="requestWithdrawal()">Submit Request</button>
+                </div>`;
+        } else if (currentTab === 'referral') {
+            container.innerHTML = `<div class="card"><h3>👥 Team Downline (${teamCount})</h3><p>Share your link from Home tab.</p></div>`;
+        }
+    }
+
+    async function register() {
+        let name = document.getElementById('reg_name').value;
+        let email = document.getElementById('reg_email').value;
+        let pass = document.getElementById('reg_pass').value;
+        let refIn = document.getElementById('reg_ref').value.trim();
+        let avatarInput = document.getElementById('reg_avatar');
+
+        if(!name || !email || !pass) { alert('Please fill all fields!'); return; }
+        if(users.some(x => x.email === email)) { alert('Email already registered!'); return; }
+
+        let refCode = 'REF' + Math.floor(1000 + Math.random() * 9000);
+        let avatarUrl = (avatarInput.files.length > 0) ? URL.createObjectURL(avatarInput.files[0]) : '';
+        let referredByCode = refIn ? (users.find(x => x.ref === refIn)?.ref || '') : '';
+
+        users.push({ 
+            name, email, pass, balance: 0, investment: 0, investmentNote: '', 
+            investmentScreenshot: '', idFront: '', idBack: '', profit: 0, approved: 0, 
+            ref: refCode, referredBy: referredByCode, avatar: avatarUrl, level: 1, 
+            lastTaskDate: '', taskReward: 0.35, wheelBalance: 0, wheelSequence: [], 
+            wheelLimit: 0, spinsUsed: 0, withdrawals: [] 
+        });
+
+        await saveDatatoCloud();
+        alert('Registered successfully in Supabase Cloud! Please login.');
+        authMode = 'login';
+        render();
+    }
+
+    async function login() {
+        let email = document.getElementById('log_email').value;
+        let pass = document.getElementById('log_pass').value;
+        let u = users.find(x => x.email === email && x.pass === pass);
+        if(u) {
+            loggedUser = u.email;
+            sessionStorage.setItem('logged_user', loggedUser);
+            render();
+        } else {
+            alert('Invalid Email or Password!');
+        }
+    }
+
+    function logout() {
+        loggedUser = null;
+        sessionStorage.removeItem('logged_user');
+        render();
+    }
+
+    async function saveAdminWallet() {
+        adminWallet = document.getElementById('admin_wallet_input').value;
+        await saveDatatoCloud();
+        alert('Admin wallet updated in Cloud!');
+    }
+
+    async function submitInvestment() {
+        let amt = parseFloat(document.getElementById('inv_amt').value);
+        let msg = document.getElementById('inv_msg').value;
+        let fileInput = document.getElementById('inv_file');
+        if(!msg) { alert('Enter transaction ID!'); return; }
+
+        let u = users.find(x => x.email === loggedUser);
+        if (u) {
+            u.investment = amt;
+            u.investmentNote = msg;
+            if(fileInput.files.length > 0) u.investmentScreenshot = URL.createObjectURL(fileInput.files[0]);
+            u.approved = 0;
+            await saveDatatoCloud();
+            alert('Investment submitted to Cloud Admin!');
+            switchTab('dashboard');
+        }
+    }
+
+    async function claimTask(reward) {
+        let u = users.find(x => x.email === loggedUser);
+        if (u) {
+            u.balance += reward;
+            u.lastTaskDate = new Date().toDateString();
+            await saveDatatoCloud();
+            alert(`Claimed $${reward.toFixed(2)}!`);
+            render();
+        }
+    }
+
+    async function requestWithdrawal() {
+        let amt = parseFloat(document.getElementById('wd_amount').value);
+        let address = document.getElementById('wd_address').value;
+        if(!address) { alert('Enter wallet address!'); return; }
+        let u = users.find(x => x.email === loggedUser);
+        if(u.balance < amt) { alert('Insufficient balance!'); return; }
+
+        u.balance -= amt;
+        if(!u.withdrawals) u.withdrawals = [];
+        u.withdrawals.push({ amount: amt, fee: 1.0, netAmount: amt - 1.0, address, date: new Date().toLocaleString(), status: 'Pending' });
+        await saveDatatoCloud();
+        alert('Withdrawal requested!');
+        switchTab('withdraw');
+    }
+
+    async function adminApproveInvestment(index) {
+        users[index].approved = 1;
+        await saveDatatoCloud();
+        alert('Approved successfully!');
+        render();
+    }
+
+    async function adminRejectInvestment(index) {
+        users[index].approved = 0;
+        users[index].investment = 0;
+        await saveDatatoCloud();
+        alert('Rejected!');
+        render();
+    }
+
+    async function updateUserBal(index) {
+        let val = parseFloat(document.getElementById('bal_' + index).value);
+        if(!isNaN(val)) {
+            users[index].balance = val;
+            await saveDatatoCloud();
+            alert('Balance updated!');
+            render();
+        }
+    }
+
+    async function updateUserWheelLimit(index) {
+        let val = parseInt(document.getElementById('limit_' + index).value);
+        if(!isNaN(val)) {
+            users[index].wheelLimit = val;
+            await saveDatatoCloud();
+            alert('Spin limit updated!');
+            render();
+        }
+    }
+
+    async function updateUserLevel(index) {
+        let val = parseInt(document.getElementById('level_' + index).value);
+        if(!isNaN(val)) {
+            users[index].level = val;
+            await saveDatatoCloud();
+            alert('Level updated!');
+            render();
+        }
+    }
+
+    async function approveWithdrawal(userIndex, wIndex) {
+        users[userIndex].withdrawals[wIndex].status = 'Approved';
+        await saveDatatoCloud();
+        alert('Withdrawal approved!');
+        render();
+    }
+</script>
+</body>
+</html>

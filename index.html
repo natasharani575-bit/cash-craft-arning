@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CashCraft - Supabase Cloud Database Integrated</title>
+    <!-- Supabase JS Client Library -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background: #0a0f1d; color: #fff; padding-bottom: 70px; }
+        .app-container { max-width: 600px; margin: auto; background: #0f1c3f; border-radius: 0 0 14px 14px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); overflow: hidden; border: 1px solid #1e3a8a; min-height: 100vh; display: flex; flex-direction: column; position: relative; }
+        
+        /* Navbar */
+        .navbar { background: #172554; padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1e40af; position: sticky; top: 0; z-index: 100; }
+        .logo { font-size: 18px; font-weight: bold; color: #60a5fa; display: flex; align-items: center; gap: 6px; }
+        .user-info { font-size: 12px; color: #93c5fd; display: flex; align-items: center; gap: 8px; }
+        
+        /* User Profile Avatar Style */
+        .nav-avatar { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 2px solid #60a5fa; background: #0a0f1d; }
+        .profile-avatar-large { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid #3b82f6; margin-bottom: 10px; background: #0a0f1d; box-shadow: 0 4px 12px rgba(0,0,0,0.5); }
+
+        /* Level Badge Styles */
+        .level-badge { background: linear-gradient(135deg, #f59e0b, #d97706); color: #fff; font-size: 10px; font-weight: bold; padding: 2px 8px; border-radius: 12px; display: inline-flex; align-items: center; gap: 3px; border: 1px solid #fde047; box-shadow: 0 2px 6px rgba(0,0,0,0.3); text-transform: uppercase; }
+
+        /* Modern Bottom Navigation Bar with Icons */
+        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; max-width: 600px; margin: auto; background: #0b132b; display: flex; justify-content: space-around; padding: 8px 0; border-top: 1px solid #1d4ed8; z-index: 1000; box-shadow: 0 -5px 15px rgba(0,0,0,0.5); }
+        .nav-item { background: transparent; border: none; color: #93c5fd; display: flex; flex-direction: column; align-items: center; font-size: 9px; cursor: pointer; flex: 1; transition: 0.2s; }
+        .nav-item span.icon { font-size: 16px; margin-bottom: 2px; }
+        .nav-item.active { color: #60a5fa; font-weight: bold; }
+
+        .content { flex: 1; padding: 20px; overflow-y: auto; padding-bottom: 30px; }
+        
+        /* Forms & Cards */
+        .card { background: #172554; padding: 16px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #1e40af; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+        .card h3 { color: #f8fafc; font-size: 16px; margin-bottom: 10px; border-bottom: 1px solid #1e40af; padding-bottom: 6px; }
+        input, select { width: 100%; padding: 12px; margin: 6px 0 12px 0; background: #0a0f1d; border: 1px solid #3b82f6; border-radius: 8px; color: #fff; font-size: 14px; }
+        .btn { background: #2563eb; color: white; border: none; padding: 12px 15px; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; font-size: 14px; transition: 0.2s; }
+        .btn:hover { background: #1d4ed8; }
+        .btn-success { background: #059669; }
+        .btn-success:hover { background: #047857; }
+        .btn-danger { background: #dc2626; color: #fff; }
+        .btn:disabled { background: #334155; color: #94a3b8; cursor: not-allowed; }
+        
+        /* Task Card Styling */
+        .task-item { background: #0a0f1d; border: 1px solid #3b82f6; border-radius: 8px; padding: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+        .task-info h4 { font-size: 14px; color: #60a5fa; margin-bottom: 3px; }
+        .task-info p { font-size: 12px; color: #93c5fd; }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #1e40af; padding: 8px; text-align: center; font-size: 11px; }
+        th { background: #172554; color: #93c5fd; }
+        .error-box { background: #7f1d1d; color: #fca5a5; padding: 12px; border-radius: 8px; text-align: center; margin-bottom: 12px; font-size: 13px; border: 1px solid #991b1b; }
+        .link-text { color: #60a5fa; cursor: pointer; text-align: center; margin-top: 12px; font-size: 13px; }
+    </style>
+</head>
+<body>
+
+<div class="app-container" id="app"></div>
+
+<script>
+    // Supabase Initialization
+    const SUPABASE_URL = 'https://cashcraft.supabase.co';
+    const SUPABASE_ANON_KEY = 'Sb_publishable_XApv7V9eos1gtwJRssqW7A_Y7NyfGkG';
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    let defaultAdmin = { 
+        name: 'Admin Master', 
+        email: 'Natasha.lee@gmail.com', 
+        pass: 'NatashaAli12345', 
+        balance: 0, 
+        investment: 0, 
+        profit: 0, 
+        approved: 1, 
+        ref: 'ADMIN', 
+        referredBy: '', 
+        avatar: '', 
+        count: 0, 
+        level: 1, 
+        lastTaskDate: '', 
+        taskReward: 0.35, 
+        wheelBalance: 0, 
+        wheelSequence: [], 
+        wheelLimit: 0, 
+        spinsUsed: 0, 
+        withdrawals: [], 
+        idFront: '', 
+        idBack: '' 
+    };
+
+    let users = [];
+    let adminWallet = '0xDefaultAdminBEP20WalletAddress91bABC';
+
+    let loggedUser = sessionStorage.getItem('logged_user');
+    let currentTab = 'dashboard';
+    let authMode = 'register';
+
+    async function initSupabaseData() {
+        try {
+            let { data: dbUsers, error: userError } = await supabaseClient.from('users').select('*');
+            if (userError || !dbUsers || dbUsers.length === 0) {
+                users = [defaultAdmin];
+                await supabaseClient.from('users').upsert(users);
+            } else {
+                users = dbUsers;
+            }
+
+            let adminIndex = users.findIndex(x => x.ref === 'ADMIN' || x.email === 'Natasha.lee@gmail.com');
+            if (adminIndex !== -1) {
+                users[adminIndex].email = 'Natasha.lee@gmail.com';
+                users[adminIndex].pass = 'NatashaAli12345';
+                users[adminIndex].name = 'Admin Master';
+                users[adminIndex].approved = 1;
+            } else {
+                users.unshift(defaultAdmin);
+                await supabaseClient.from('users').upsert(users);
+            }
+        } catch (e) {
+            users = [defaultAdmin];
+        }
+        render();
+    }
+
+    async function syncToSupabase() {
+        try {
+            await supabaseClient.from('users').upsert(users);
+        } catch (e) {
+            console.log('Error syncing to Supabase', e);
+        }
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+        let urlParams = new URLSearchParams(window.location.search);
+        let refParam = urlParams.get('ref');
+        if (refParam && !loggedUser) {
+            sessionStorage.setItem('temp_ref', refParam);
+        }
+        initSupabaseData();
+    });
+
+    function calculateLevel(teamCount) {
+        if (teamCount >= 100) return 8;
+        if (teamCount >= 70) return 7;
+        if (teamCount >= 60) return 6;
+        if (teamCount >= 50) return 5;
+        if (teamCount >= 30) return 4;
+        if (teamCount >= 10) return 3;
+        if (teamCount >= 6) return 2;
+        return 1;
+    }
+
+    function render() {
+        let app = document.getElementById('app');
+        if (!loggedUser) {
+            let savedRef = sessionStorage.getItem('temp_ref') || '';
+            if (authMode === 'register') {
+                app.innerHTML = `
+                    <div style="padding: 30px;">
+                        <div style="text-align:center; margin-bottom:20px;">
+                            <h2 style="color:#60a5fa; font-size:24px;">💎 CashCraft</h2>
+                            <p style="color:#93c5fd; font-size:13px; margin-top:5px;">Supabase Cloud Connected</p>
+                        </div>
+                        <div class="card">
+                            <input type="text" id="reg_name" placeholder="Full Name">
+                            <input type="email" id="reg_email" placeholder="Gmail Address">
+                            <input type="password" id="reg_pass" placeholder="Password">
+                            <input type="text" id="reg_ref" value="${savedRef}" placeholder="Referral Code">
+                            <button class="btn btn-success" onclick="register()">Register Now</button>
+                        </div>
+                        <p class="link-text" onclick="setAuthMode('login')">Already have an account? <b>Login here</b></p>
+                    </div>`;
+            } else {
+                app.innerHTML = `
+                    <div style="padding: 30px;">
+                        <div style="text-align:center; margin-bottom:20px;">
+                            <h2 style="color:#60a5fa; font-size:24px;">💎 CashCraft</h2>
+                            <p style="color:#93c5fd; font-size:13px; margin-top:5px;">Welcome Back! Please Login</p>
+                        </div>
+                        <div class="card">
+                            <input type="email" id="log_email" placeholder="Gmail Address">
+                            <input type="password" id="log_pass" placeholder="Password">
+                            <button class="btn" onclick="login()">Login</button>
+                        </div>
+                        <p class="link-text" onclick="setAuthMode('register')">Don't have an account? <b>Register First</b></p>
+                    </div>`;
+            }
+        } else if (loggedUser === 'Natasha.lee@gmail.com') {
+            app.innerHTML = `
+                <div class="navbar">
+                    <div class="logo">👑 Admin Master Panel</div>
+                    <button onclick="logout()" class="btn-danger" style="width:auto; padding:6px 12px; font-size:12px;">Logout</button>
+                </div>
+                <div class="content">
+                    <div class="card">
+                        <h3>⚙️ Supabase Admin Control Active</h3>
+                        <p style="color:#93c5fd; font-size:12px;">Cloud database connected successfully.</p>
+                    </div>
+                </div>`;
+        } else {
+            let u = users.find(x => x.email === loggedUser);
+            if (!u) { logout(); return; }
+            app.innerHTML = `
+                <div class="navbar">
+                    <div class="logo">💎 CashCraft</div>
+                    <button onclick="logout()" class="btn-danger" style="width:auto; padding:6px 12px; font-size:12px;">Logout</button>
+                </div>
+                <div class="content">
+                    <div class="card">
+                        <h3>Welcome, ${u.name} (Cloud Connected)</h3>
+                        <p style="color:#34d399; font-size:14px; margin-top:5px;">Balance: $${u.balance.toFixed(2)}</p>
+                    </div>
+                </div>`;
+        }
+    }
+
+    function setAuthMode(mode) { authMode = mode; render(); }
+    function logout() { loggedUser = null; sessionStorage.removeItem('logged_user'); render(); }
+    
+    async function register() {
+        let name = document.getElementById('reg_name').value;
+        let email = document.getElementById('reg_email').value;
+        let pass = document.getElementById('reg_pass').value;
+        if(!name || !email || !pass) { alert('Please fill all fields!'); return; }
+        if(users.some(x => x.email === email)) { alert('Email already registered!'); return; }
+        
+        users.push({ name, email, pass, balance: 0, investment: 0, approved: 0, ref: 'REF'+Math.floor(1000+Math.random()*9000), withdrawals: [] });
+        await syncToSupabase();
+        alert('Registered successfully in Supabase!');
+        authMode = 'login';
+        render();
+    }
+
+    async function login() {
+        let email = document.getElementById('log_email').value;
+        let pass = document.getElementById('log_pass').value;
+        let u = users.find(x => x.email === email && x.pass === pass);
+        if(u) { loggedUser = u.email; sessionStorage.setItem('logged_user', loggedUser); render(); }
+        else { alert('Invalid credentials!'); }
+    }
+</script>
+</body>
+</html>

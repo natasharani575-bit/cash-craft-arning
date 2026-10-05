@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CashCraft - Complete Referral Link & Team System</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background: #0a0f1d; color: #fff; padding-bottom: 70px; }
+       .app-container { max-width: 600px; margin: auto; background: #0f1c3f; border-radius: 0 0 14px 14px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); overflow: hidden; border: 1px solid #1e3a8a; min-height: 100vh; display: flex; flex-direction: column; position: relative; }
+       .navbar { background: #172554; padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1e40af; position: sticky; top: 0; z-index: 100; }
+       .logo { font-size: 18px; font-weight: bold; color: #60a5fa; }
+       .user-info { font-size: 12px; color: #93c5fd; display: flex; align-items: center; gap: 8px; }
+       .nav-avatar { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 2px solid #60a5fa; background: #0a0f1d; }
+       .profile-avatar-large { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid #3b82f6; margin-bottom: 10px; background: #0a0f1d; }
+       .level-badge { background: linear-gradient(135deg, #f59e0b, #d97706); color: #fff; font-size: 10px; font-weight: bold; padding: 2px 8px; border-radius: 12px; border: 1px solid #fde047; }
+       .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; max-width: 600px; margin: auto; background: #0b132b; display: flex; justify-content: space-around; padding: 8px 0; border-top: 1px solid #1d4ed8; z-index: 1000; }
+       .nav-item { background: transparent; border: none; color: #93c5fd; display: flex; flex-direction: column; align-items: center; font-size: 9px; cursor: pointer; flex: 1; }
+       .nav-item span.icon { font-size: 16px; margin-bottom: 2px; }
+       .nav-item.active { color: #60a5fa; font-weight: bold; }
+       .content { flex: 1; padding: 20px; overflow-y: auto; padding-bottom: 30px; }
+       .card { background: #172554; padding: 16px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #1e40af; }
+       .card h3 { color: #f8fafc; font-size: 16px; margin-bottom: 10px; border-bottom: 1px solid #1e40af; padding-bottom: 6px; }
+        input, select { width: 100%; padding: 12px; margin: 6px 0 12px 0; background: #0a0f1d; border: 1px solid #3b82f6; border-radius: 8px; color: #fff; font-size: 14px; }
+       .btn { background: #2563eb; color: white; border: none; padding: 12px 15px; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; font-size: 14px; }
+       .btn-success { background: #059669; }
+       .btn-danger { background: #dc2626; color: #fff; }
+       .btn:disabled { background: #334155; color: #94a3b8; }
+       .task-item { background: #0a0f1d; border: 1px solid #3b82f6; border-radius: 8px; padding: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+       .slider-container { position: relative; width: 100%; height: 320px; border-radius: 12px; overflow: hidden; margin-bottom: 15px; background: #0a0f1d; }
+       .slide { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; transition: opacity 1s ease-in-out; display: flex; flex-direction: column; justify-content: flex-end; background-size: cover; background-position: center; }
+       .slide.active { opacity: 1; }
+       .slide-caption { background: rgba(10, 15, 29, 0.85); color: #fff; padding: 12px 15px; font-size: 12px; text-align: center; }
+       .wheel-box { text-align: center; background: radial-gradient(circle, #172554 0%, #0a0f1d 100%); padding: 15px; border-radius: 15px; border: 3px solid #3b82f6; display: inline-block; margin: auto; }
+       .wheel-title { background: linear-gradient(to bottom, #60a5fa, #2563eb); color: #fff; font-weight: bold; padding: 4px 15px; border-radius: 20px; font-size: 16px; display: inline-block; margin-bottom: 8px; }
+       .wheel-wrap { position: relative; display: inline-block; }
+        canvas { background: #0a0f1d; border-radius: 50%; border: 5px solid #1d4ed8; }
+       .pointer { position: absolute; top: -5px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 10px solid transparent; border-right: 10px solid transparent; border-bottom: 20px solid #60a5fa; z-index: 10; }
+       .win-popup { position: fixed; top: 20px; left: 50%; transform: translateX(-50%) scale(0.7); background: linear-gradient(135deg, #059669, #10b981); color: #fff; padding: 15px 30px; border-radius: 30px; font-size: 20px; font-weight: bold; z-index: 9999; opacity: 0; transition: all 0.3s; pointer-events: none; }
+       .win-popup.show { transform: translateX(-50%) scale(1); opacity: 1; }
+       .chat-container { display: flex; flex-direction: column; height: 260px; }
+       .chat-messages { flex: 1; background: #0a0f1d; border: 1px solid #1e40af; border-radius: 8px; padding: 8px; overflow-y: auto; margin-bottom: 6px; }
+       .msg { padding: 6px 10px; margin: 4px 0; border-radius: 8px; max-width: 85%; font-size: 11px; word-break: break-all; }
+       .msg-user { background: #1e3a8a; margin-left: auto; }
+       .msg-admin { background: #1e293b; margin-right: auto; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #1e40af; padding: 8px; text-align: center; font-size: 11px; }
+        th { background: #172554; color: #93c5fd; }
+       .error-box { background: #7f1d1d; color: #fca5a5; padding: 12px; border-radius: 8px; text-align: center; margin-bottom: 12px; font-size: 13px; }
+       .link-text { color: #60a5fa; cursor: pointer; text-align: center; margin-top: 12px; font-size: 13px; }
+    </style>
+</head>
+<body>
+<div class="app-container" id="app">
+    <div id="winPopup" class="win-popup">🎉 WON: $<span id="popup-amt">0</span>!</div>
+</div>
+<script>
+    // ===== آپ کی اپنی Key لگی ہوئی ہے =====
+    const SUPABASE_URL = "https://qgmucqsefphoapgljjia.supabase.co";
+    const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_TykY2iZl-jZC89NeZ80Xkg_i4vRCx63";
+    const ADMIN_WALLET_ADDRESS = "0xDefaultAdminBEP20WalletAddress91bABC";
+
+    const headers = {
+        "apikey": SUPABASE_PUBLISHABLE_KEY,
+        "Authorization": "Bearer " + SUPABASE_PUBLISHABLE_KEY,
+        "Content-Type": "application/json",
+        "Prefer": "return=representation"
+    };
+
+    let defaultAdmin = { name: 'Admin Master', email: 'Natasha.lee@gmail.com', pass: 'NatashaAli12345', balance: 0, investment: 0, profit: 0, approved: 1, ref: 'ADMIN', referredBy: '', avatar: '', count: 0, level: 1, lastTaskDate: '', taskReward: 0.35, wheelBalance: 0, wheelSequence: [], wheelLimit: 0, spinsUsed: 0, withdrawals: [], idFront: '', idBack: '' };
+
+    // ===== 100% CLEAN - NO LOCALSTORAGE =====
+    async function fetchUsersFromDB() {
+        try {
+            let res = await fetch(`${SUPABASE_URL}/rest/v1/cashcraft_users?select=*`, { headers });
+            if (res.ok) {
+                let data = await res.json();
+                if (data && data.length > 0) {
+                    let cloudUsers = data.map(item => item.data || item);
+                    if (!cloudUsers.some(x => x.email.toLowerCase() === 'natasha.lee@gmail.com')) {
+                        cloudUsers.unshift(defaultAdmin);
+                    }
+                    return cloudUsers;
+                }
+            }
+        } catch (e) { console.error(e); }
+        return [defaultAdmin];
+    }
+
+    async function saveUsersToDB(usersList) {
+        try {
+            for (let u of usersList) {
+                await fetch(`${SUPABASE_URL}/rest/v1/cashcraft_users`, {
+                    method: 'POST',
+                    headers: {...headers, "Prefer": "resolution=merge-duplicates" },
+                    body: JSON.stringify({ email: u.email.toLowerCase(), data: u })
+                });
+            }
+        } catch (e) { console.error(e); }
+    }
+
+    async function fetchChatsFromDB() {
+        try {
+            let res = await fetch(`${SUPABASE_URL}/rest/v1/cashcraft_chats?id=eq.1&select=*`, { headers });
+            if (res.ok) { let d = await res.json(); if(d.length>0) return d[0].messages || []; }
+        } catch(e){}
+        return [];
+    }
+    async function saveChatsToDB(chatsList) {
+        try {
+            await fetch(`${SUPABASE_URL}/rest/v1/cashcraft_chats`, {
+                method: 'POST',
+                headers: {...headers, "Prefer": "resolution=merge-duplicates" },
+                body: JSON.stringify({ id: 1, messages: chatsList })
+            });
+        } catch(e){}
+    }
+
+    async function initApp() {
+        let users = await fetchUsersFromDB();
+        let adminIndex = users.findIndex(x => x.ref === 'ADMIN' || x.email.toLowerCase() === 'natasha.lee@gmail.com');
+        if (adminIndex!== -1) {
+            users[adminIndex].email = 'Natasha.lee@gmail.com';
+            users[adminIndex].pass = 'NatashaAli12345';
+            users[adminIndex].name = 'Admin Master';
+            users[adminIndex].approved = 1;
+        } else { users.unshift(defaultAdmin); }
+        await saveUsersToDB(users);
+        render();
+    }
+
+    let loggedUser = sessionStorage.getItem('logged_user');
+    let currentTab = 'dashboard';
+    let authMode = 'register';
+    let sliderInterval = null;
+
+    window.addEventListener('DOMContentLoaded', () => {
+       
